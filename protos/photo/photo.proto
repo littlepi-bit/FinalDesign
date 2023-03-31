@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package photo;
+
+option go_package = "./;photo";
+
+message PhotoRequest{
+    string name = 1;
+    bytes databytes = 2;
+}
+
+message PhotoReply{
+    string res = 1;
+}
+
+service Photoer {
+    rpc SendPhoto (PhotoRequest) returns (PhotoReply){}
+}
