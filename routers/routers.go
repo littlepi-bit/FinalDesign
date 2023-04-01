@@ -49,6 +49,7 @@ func RouterInit() *gin.Engine {
 	r.GET("/downloadProFile", controller.GetProjectFile)
 	r.GET("/downloadFile/:fileId", controller.DownloadFile)
 	r.GET("/excel", controller.ExcelDetail)
+	r.GET("/getProject", controller.GetProject)
 	r.GET("/getAllProject", controller.GetAllProject)
 	r.GET("/getFolder/:folderId", controller.GetFolder)
 	r.POST("/chunkUpload", controller.ChunkUpload)

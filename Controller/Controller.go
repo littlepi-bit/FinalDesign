@@ -217,3 +217,10 @@ func (controller *Controller) DeleteFile(c *gin.Context) {
 		"msg": "ok",
 	})
 }
+
+//通过proId获取project
+func (controller *Controller) GetProject(c *gin.Context) {
+	proId := c.Query("proId")
+	projects := Model.SearchProjectByProId(proId)
+	c.JSON(http.StatusOK, projects[0])
+}

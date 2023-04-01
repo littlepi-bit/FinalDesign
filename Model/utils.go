@@ -1,5 +1,9 @@
 package Model
 
+import (
+	"strconv"
+)
+
 //搜索项目通过项目名
 func SearchProjectByProName(proName string) []Project {
 	return GlobalES.QueryByProjectName(proName)
@@ -13,6 +17,13 @@ func SearchProjectByIndName(indName string) []Project {
 //搜索项目通过单体工程名
 func SearchProjectByUnitName(unitName string) []Project {
 	return GlobalES.QueryByUnitProjectName(unitName)
+}
+
+//通过proId精确获取项目
+func SearchProjectByProId(proId string) []Project {
+	Id, _ := strconv.Atoi(proId)
+	project := GetPorjectByProId(Id)
+	return GlobalES.QueryByProjectName(project.ProjectName)
 }
 
 //根据文件名称搜索文件

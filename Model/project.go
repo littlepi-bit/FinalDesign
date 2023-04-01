@@ -481,7 +481,7 @@ func GetAllProject() (pros []Pro) {
 }
 
 func GetPorjectByProId(proId int) (pro Pro) {
-	result := GlobalConn.Table("project").First(&pro)
+	result := GlobalConn.Table("project").Where("id=?", proId).Find(&pro)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}

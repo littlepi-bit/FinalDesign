@@ -129,35 +129,6 @@ func printProjects(res *elastic.SearchResult, err error) (pros []Project) {
 	return pros
 }
 
-//打印查询到的File
-func printFiles(res *elastic.SearchResult, err error) (files []File) {
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	var typ File
-	for _, item := range res.Each(reflect.TypeOf(typ)) { //从搜索结果中取数据的方法
-		t := item.(File)
-		files = append(files, t)
-		//fmt.Printf("%#v\n", t)
-		fmt.Printf("fileName: %s\n", t.FileName)
-	}
-	return files
-}
-
-//打印查询到的Folder
-func printFolders(res *elastic.SearchResult, err error) (folders []Folder) {
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	var typ Folder
-	for _, item := range res.Each(reflect.TypeOf(typ)) { //从搜索结果中取数据的方法
-		t := item.(Folder)
-		folders = append(folders, t)
-		fmt.Printf("%#v\n", t)
-	}
-	return folders
-}
-
 //打印查询到的通用文件
 func printGFiles(res *elastic.SearchResult, err error) (gFiles []GeneralFile) {
 	if err != nil {
@@ -185,22 +156,12 @@ func (e *ElasticSearch) InsertProject(pro Project) {
 func (e *ElasticSearch) InsertFile(file File) {
 	gFile := FileToGFile(file)
 	e.InsertGFile(gFile)
-	// put, err := e.Client.Index().Index("file").Type("file").BodyJson(file).Do(context.Background())
-	// if err != nil {
-	// 	log.Fatal(err.Error())
-	// }
-	// log.Printf("Indexed tweet %s to index s%s, type %s\n", put.Id, put.Index, put.Type)
 }
 
 //添加文件夹信息
 func (e *ElasticSearch) InsertFolder(folder Folder) {
 	gFile := FolderToGFile(folder)
 	e.InsertGFile(gFile)
-	// put, err := e.Client.Index().Index("folder").Type("folder").BodyJson(folder).Do(context.Background())
-	// if err != nil {
-	// 	log.Fatal(err.Error())
-	// }
-	// log.Printf("Indexed tweet %s to index s%s, type %s\n", put.Id, put.Index, put.Type)
 }
 
 //添加gFile信息
@@ -231,31 +192,28 @@ func (e *ElasticSearch) QueryByUnitProjectName(unitName string) []Project {
 	return printProjects(res, err)
 }
 
-//根据文件名称搜索文件
-func (e *ElasticSearch) QueryByFileName(proId int, fileName string) []File {
-	boolQuery := elastic.NewBoolQuery()
-	termQuery := elastic.NewTermQuery("ProId", proId)
-	matchQuery := elastic.NewMatchQuery("FileName", fileName)
-	boolQuery.Must(termQuery, matchQuery)
-	res, err := e.Client.Search("file").Type("file").Query(boolQuery).Do(context.Background())
-	return printFiles(res, err)
-}
-
-//根据文件名称搜索文件夹
-func (e *ElasticSearch) QueryByFolderName(proId int, folderName string) []Folder {
-	boolQuery := elastic.NewBoolQuery()
-	termQuery := elastic.NewTermQuery("ProId", proId)
-	matchQuery := elastic.NewMatchQuery("FolderName", folderName)
-	boolQuery.Must(termQuery, matchQuery)
-	res, err := e.Client.Search("folder").Type("folder").Query(boolQuery).Do(context.Background())
-	return printFolders(res, err)
+//根据项目名称精确查询项目
+func (e *ElasticSearch) TermQueryByProjectName(proName string) []Project {
+	termQuery := elastic.NewTermQuery("ProjectName", proName)
+	res, err := e.Client.Search("management").Type("project").Query(termQuery).Do(context.Background())
+	return printProjects(res, err)
 }
 
 //根据文件名搜索通用文件
 func (e *ElasticSearch) QueryByGFileName(proId int, gFileName string) []GeneralFile {
 	boolQuery := elastic.NewBoolQuery()
-	termQuery := elastic.NewTermQuery("ProId", proId)
-	matchQuery := elastic.NewMatchQuery("Name", gFileName)
+	termQuery := elastic.NewTermQuery("proId", proId)
+	matchQuery := elastic.NewMatchQuery("name", gFileName)
+	boolQuery.Must(termQuery, matchQuery)
+	res, err := e.Client.Search("gfile").Type("gfile").Query(boolQuery).Do(context.Background())
+	return printGFiles(res, err)
+}
+
+//通过文件Id搜索通用文件
+func (e *ElasticSearch) QueryByGFileId(proId int, GId int) []GeneralFile {
+	boolQuery := elastic.NewBoolQuery()
+	termQuery := elastic.NewTermQuery("proId", proId)
+	matchQuery := elastic.NewMatchQuery("gId", GId)
 	boolQuery.Must(termQuery, matchQuery)
 	res, err := e.Client.Search("gfile").Type("gfile").Query(boolQuery).Do(context.Background())
 	return printGFiles(res, err)
@@ -290,8 +248,8 @@ func (e *ElasticSearch) DeleteFolder(proId int, folderName string) {
 //通过文件名删除通用文件
 func (e *ElasticSearch) DeleteGFileByFileName(proId int, fileName string) {
 	boolQuery := elastic.NewBoolQuery()
-	termQuery1 := elastic.NewTermQuery("ProId", proId)
-	termQuery2 := elastic.NewTermQuery("Name", fileName)
+	termQuery1 := elastic.NewTermQuery("proId", proId)
+	termQuery2 := elastic.NewTermQuery("name", fileName)
 	boolQuery.Must(termQuery1, termQuery2)
 	res, err := e.Client.DeleteByQuery("gfile").Query(boolQuery).Do(context.Background())
 	if err != nil {
@@ -303,8 +261,8 @@ func (e *ElasticSearch) DeleteGFileByFileName(proId int, fileName string) {
 //通过文件Id删除通用文件
 func (e *ElasticSearch) DeleteGFileByFileId(proId int, fileId int) {
 	boolQuery := elastic.NewBoolQuery()
-	termQuery1 := elastic.NewTermQuery("ProId", proId)
-	termQuery2 := elastic.NewTermQuery("GId", fileId)
+	termQuery1 := elastic.NewTermQuery("proId", proId)
+	termQuery2 := elastic.NewTermQuery("gId", fileId)
 	boolQuery.Must(termQuery1, termQuery2)
 	res, err := e.Client.DeleteByQuery("gfile").Query(boolQuery).Do(context.Background())
 	if err != nil {

@@ -26,6 +26,7 @@ func main() {
 	e := Model.NewElasticSearch()
 	e.Init()
 	e.Query()
+	//e.QueryByGFileId(3488138168, 2202788876)
 }
 
 func splitNum(num int) int {
