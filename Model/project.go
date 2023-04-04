@@ -62,6 +62,8 @@ type Sheet0 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -74,6 +76,8 @@ type Sheet1 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -106,6 +110,8 @@ type Sheet2 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -123,6 +129,8 @@ type Sheet3 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -136,6 +144,8 @@ type Sheet4 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -150,6 +160,8 @@ type Sheet5 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -167,6 +179,8 @@ type Sheet6 struct {
 	SheetName string
 	Title     string
 	SheetType string
+	ProId     int
+	ProName   string
 	TableId   int
 	Col1      string
 	Col2      string
@@ -299,6 +313,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -308,6 +325,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet0(s0)
 		}
 	case "1":
 		for i := 0; i < n; i++ {
@@ -316,6 +334,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -345,6 +366,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet1(s1)
 		}
 	case "2":
 		for i := 0; i < n; i++ {
@@ -353,6 +375,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -367,6 +392,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet2(s2)
 		}
 	case "3":
 		for i := 0; i < n; i++ {
@@ -375,6 +401,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -385,6 +414,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet3(s3)
 		}
 	case "4":
 		for i := 0; i < n; i++ {
@@ -393,6 +423,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -404,6 +437,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet4(s4)
 		}
 	case "5":
 		for i := 0; i < n; i++ {
@@ -412,6 +446,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -426,6 +463,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				fmt.Println(result.Error)
 			}
+			GlobalES.InsertSheet5(s5)
 		}
 	case "6":
 		for i := 0; i < n; i++ {
@@ -434,6 +472,9 @@ func (t PriceTable) InserSheet(s Sheet) {
 				SheetName: s.SheetName,
 				Title:     s.Title,
 				SheetType: t.TableType,
+				ProId:     t.ProId,
+				ProName:   t.ProName,
+				TableId:   t.TableId,
 				Col1:      s.Col[i][0],
 				Col2:      s.Col[i][1],
 				Col3:      s.Col[i][2],
@@ -464,6 +505,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 			if result.Error != nil {
 				log.Fatal(result.Error)
 			}
+			GlobalES.InsertSheet6(s6)
 		}
 	}
 }
@@ -480,8 +522,27 @@ func GetAllProject() (pros []Pro) {
 	return
 }
 
+//通过项目Id获取数据库中的项目信息
 func GetPorjectByProId(proId int) (pro Pro) {
 	result := GlobalConn.Table("project").Where("id=?", proId).Find(&pro)
+	if result.Error != nil {
+		log.Fatal(result.Error)
+	}
+	return
+}
+
+//通过项目名获取数据库中的项目信息
+func GetPorjectByProName(ProName string) (pro Pro) {
+	result := GlobalConn.Table("project").Where("project_name=?", ProName).First(&pro)
+	if result.Error != nil {
+		log.Fatal(result.Error)
+	}
+	return
+}
+
+//通过项目名称获取table
+func GetTableByProId(proName string) (tables []PriceTable) {
+	result := GlobalConn.Table("price_table").Where("pro_name=?", proName).Find(&tables)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}

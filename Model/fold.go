@@ -111,9 +111,9 @@ func GetFolderById(proId string, folderId string) (folder []Folder) {
 	pId, _ := strconv.Atoi(proId)
 	fId, _ := strconv.Atoi(folderId)
 	if folderId == "0" {
-		GlobalConn.Table("folder").Where("pro_id=?", pId).Where("father_folder_id=?", fId).Find(&folder)
+		GlobalConn.Table("folder").Where("pro_id=?", pId).Where("father_folder_id=?", fId).Order("folder_name").Find(&folder)
 	} else {
-		GlobalConn.Table("folder").Where("father_folder_id=?", fId).Find(&folder)
+		GlobalConn.Table("folder").Where("father_folder_id=?", fId).Order("folder_name").Find(&folder)
 	}
 	return
 }

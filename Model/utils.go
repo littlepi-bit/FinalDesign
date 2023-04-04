@@ -1,7 +1,9 @@
 package Model
 
 import (
+	"fmt"
 	"strconv"
+	"time"
 )
 
 //搜索项目通过项目名
@@ -36,8 +38,11 @@ func DeleteFileByFileName(files []GeneralFile) {
 	for _, file := range files {
 		GlobalES.DeleteGFileByFileId(file.ProId, file.GId)
 		if file.Type == "文件" {
+			folderId, _ := strconv.Atoi(file.FatherId)
+			UpdataFolderTime(folderId)
 			GlobalConn.Where("file_id=?", file.GId).Delete(&File{})
 		} else {
+			UpdataFolderTime(file.GId)
 			DeleteAllFile(file.GId)
 		}
 	}
@@ -60,4 +65,27 @@ func DeleteAllFile(folderId int) {
 	GlobalConn.Table("folder").Where("folder_id=?", folderId).First(&root)
 	GlobalES.DeleteGFileByFileId(root.ProId, root.FolderId)
 	GlobalConn.Table("folder").Delete(&root)
+}
+
+//更新文件夹的修改日期
+func UpdataFolderTime(folderId int) {
+	if folderId == 0 {
+		return
+	}
+	var tmp Folder
+	GlobalConn.Table("folder").Where("folder_id=?", folderId).First(&tmp)
+	fmt.Printf("更新文件夹: %v\n", tmp)
+	UpdataFolderTime(tmp.FatherFolderId)
+	tmp.Time = time.Now()
+	GlobalConn.Exec("UPDATE folder SET time=? where folder_id=?", time.Now(), folderId)
+}
+
+//搜索材料价格
+func SearchMaterialPrice(materialName string, proName string) []Sheet5 {
+	return GlobalES.SearchMaterialByProName(proName, materialName)
+}
+
+//搜索综合价格
+func SearchGlobalPrice(globalName string, proName string) []Sheet6 {
+	return GlobalES.SearchGlobalByProName(proName, globalName)
 }

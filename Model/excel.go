@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/shakinm/xlsReader/xls"
 )
@@ -70,6 +71,7 @@ type File struct {
 	ProId    int
 	ProName  string
 	FileByte []byte
+	Time     time.Time
 	FolderId int
 }
 
@@ -194,8 +196,6 @@ func (excel *Excel) AnalyseXls(filePath string) {
 	}
 	excel.Sheets = sheets
 	excel.SheetToProject()
-	excel.InsertDB()
-	excel.InsertElasticSearch()
 }
 
 //解析后缀为xlsx的文件
@@ -296,6 +296,7 @@ func (excel *Excel) ShowProject() {
 
 //存储文件到mysql和Es中
 func (f File) SaveFile() {
+	f.Time = time.Now()
 	GlobalConn.Table("files").Create(f)
 	GlobalES.InsertFile(f)
 }

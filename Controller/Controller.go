@@ -98,6 +98,12 @@ func (controller *Controller) ChunkUpload(c *gin.Context) {
 	}
 	e.AnalyseExcel("./store/files/" + e.ExcelName)
 	//e.ShowExcel(6)
+	go func() {
+		e.InsertDB()
+		fmt.Println("插入Mysql成功")
+		e.InsertElasticSearch()
+		fmt.Println("插入ES成功")
+	}()
 	c.JSON(http.StatusOK, gin.H{
 		"analyse": true,
 		"Sheets":  e.Sheets,
@@ -178,12 +184,23 @@ func (controller *Controller) DownloadFile(c *gin.Context) {
 //搜索项目
 func (controller *Controller) SearchProject(c *gin.Context) {
 	proName := c.Query("proName")
-	fmt.Println("proName = " + proName)
-	projects := Model.SearchProjectByProName(proName)
+	indName := c.Query("indName")
+	unitName := c.Query("unitName")
+	var projects []Model.Project
+	if unitName != "" {
+		projects = Model.SearchProjectByUnitName(unitName)
+	} else if indName != "" {
+		projects = Model.SearchProjectByIndName(indName)
+	} else if proName != "" {
+		projects = Model.SearchProjectByProName(proName)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg": "请求为空",
+		})
+	}
 	pros := []Model.Pro{}
 	for i, _ := range projects {
-		pro := Model.Pro{}
-		pro.ProjectToPro(projects[i])
+		pro := Model.GetPorjectByProName(projects[i].ProjectName)
 		pros = append(pros, pro)
 	}
 	c.JSON(http.StatusOK, pros)
@@ -221,6 +238,23 @@ func (controller *Controller) DeleteFile(c *gin.Context) {
 //通过proId获取project
 func (controller *Controller) GetProject(c *gin.Context) {
 	proId := c.Query("proId")
+	fmt.Println("proId=" + proId)
 	projects := Model.SearchProjectByProId(proId)
 	c.JSON(http.StatusOK, projects[0])
+}
+
+//搜索材料价格
+func (controller *Controller) SearchMaterial(c *gin.Context) {
+	materialName := c.Query("materialName")
+	proName := c.Query("proName")
+	s := Model.SearchMaterialPrice(materialName, proName)
+	c.JSON(http.StatusOK, s)
+}
+
+//搜索综合价格
+func (controller *Controller) SearchGlobal(c *gin.Context) {
+	globalName := c.Query("globalName")
+	proName := c.Query("proName")
+	s := Model.SearchGlobalPrice(globalName, proName)
+	c.JSON(http.StatusOK, s)
 }

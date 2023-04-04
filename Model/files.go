@@ -45,12 +45,12 @@ func GetFileByFolderId(proId string, folderId string) (files []File) {
 	pId, _ := strconv.Atoi(proId)
 	fId, _ := strconv.Atoi(folderId)
 	if folderId == "0" {
-		result := GlobalConn.Table("files").Where("pro_id=?", pId).Where("folder_id=?", folderId).Find(&files)
+		result := GlobalConn.Table("files").Where("pro_id=?", pId).Where("folder_id=?", folderId).Order("file_name").Find(&files)
 		if result.Error != nil {
 			log.Fatal(result.Error)
 		}
 	} else {
-		result := GlobalConn.Table("files").Where("folder_id=?", fId).Find(&files)
+		result := GlobalConn.Table("files").Where("folder_id=?", fId).Order("file_name").Find(&files)
 		if result.Error != nil {
 			log.Fatal(result.Error)
 		}
@@ -87,13 +87,22 @@ func FolderToGFile(folder Folder) GeneralFile {
 
 //文件转换为通用文件格式
 func FileToGFile(file File) GeneralFile {
+	fileLen := float32(len(file.FileByte))
+	unit := []string{"B", "KB", "MB", "GB"}
+	index := 0
+	for fileLen/1024 > 1.0 {
+		fileLen /= 1024
+		index++
+	}
+	size := fmt.Sprintf("%.2f %s", fileLen, unit[index])
 	gFile := GeneralFile{
 		GId:      file.FileId,
 		Name:     file.FileName,
 		FatherId: strconv.Itoa(file.FolderId),
 		ProId:    file.ProId,
 		Type:     "文件",
-		Size:     "-",
+		Size:     size,
+		Time:     file.Time.Format("2006-01-02 15:04:05"),
 		Url:      fmt.Sprintf("%sdownloadFile/%d", prefix, file.FileId),
 	}
 	return gFile

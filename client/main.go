@@ -1,13 +1,13 @@
 package main
 
 import (
-	"FinalDesign/Model"
 	"fmt"
 	"log"
 	"math"
 	"sort"
 
 	"github.com/extrame/xls"
+	"github.com/xuri/excelize/v2"
 )
 
 func main() {
@@ -23,10 +23,11 @@ func main() {
 	// Model.OpenDatabase(false)
 	// Model.TestTable()
 	// Model.CloseDatabase()
-	e := Model.NewElasticSearch()
-	e.Init()
-	e.Query()
+	// e := Model.NewElasticSearch()
+	// e.Init()
+	// e.Query()
 	//e.QueryByGFileId(3488138168, 2202788876)
+	TestExcelize()
 }
 
 func splitNum(num int) int {
@@ -285,3 +286,51 @@ func beautifulSubsets(nums []int, k int) int {
 	}
 	return ans
 }
+
+func TestExcelize() {
+	f, err := excelize.OpenFile("./client/test2.xlsx")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	// 获取工作表中指定单元格的值
+	sheet := f.GetSheetList()
+	for _, list := range sheet {
+		fmt.Println(list)
+	}
+	cell, err := f.GetCellValue("L.2 承包人提供主要材料和工程设备一览表(表-21)【市政~", "B2")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(cell)
+}
+
+// func TestExcelize2() {
+// 	f := excelize.NewFile()
+// 	defer func() {
+// 		if err := f.Close(); err != nil {
+// 			fmt.Println(err)
+// 		}
+// 	}()
+
+// 	excel := Model.Excel{}
+// 	excel.AnalyseExcel("./client/test4.xls")
+// 	tmp := Model.Sheet{}
+// 	for i, _ := range excel.Sheets {
+// 		tmp = excel.Sheets[i]
+// 		index, err := f.NewSheet(tmp.SheetName)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 			return
+// 		}
+// 		for _,row := range tmp.Row{
+
+// 		}
+// 	}
+// }

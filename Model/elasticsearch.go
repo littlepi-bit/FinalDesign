@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"strconv"
 
 	"github.com/olivere/elastic/v7"
 )
@@ -90,6 +91,14 @@ func (e *ElasticSearch) Delete() {
 		log.Fatalln(err.Error())
 	}
 	fmt.Printf("delete result %s\n", res)
+	for i := 0; i < 7; i++ {
+		index := fmt.Sprintf("sheet%d", i)
+		res, err = e.Client.DeleteByQuery(index).Query(query).Do(context.Background())
+		if err != nil {
+			log.Fatalln(err.Error())
+		}
+		fmt.Printf("delete result %s\n", res)
+	}
 }
 
 func (e *ElasticSearch) Query() {
@@ -125,6 +134,7 @@ func printProjects(res *elastic.SearchResult, err error) (pros []Project) {
 		t := item.(Project)
 		pros = append(pros, t)
 		//fmt.Printf("%#v\n", t)
+		fmt.Println(t.ProjectName)
 	}
 	return pros
 }
@@ -139,6 +149,34 @@ func printGFiles(res *elastic.SearchResult, err error) (gFiles []GeneralFile) {
 		t := item.(GeneralFile)
 		gFiles = append(gFiles, t)
 		fmt.Printf("%#v\n", t)
+	}
+	return
+}
+
+//打印查询到的sheet5
+func printSheet5(res *elastic.SearchResult, err error) (s []Sheet5) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Sheet5
+	for _, item := range res.Each(reflect.TypeOf(typ)) {
+		t := item.(Sheet5)
+		s = append(s, t)
+		//fmt.Printf("%#v\n", t)
+	}
+	return
+}
+
+//打印查询到的sheet6
+func printSheet6(res *elastic.SearchResult, err error) (s []Sheet6) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Sheet6
+	for _, item := range res.Each(reflect.TypeOf(typ)) {
+		t := item.(Sheet6)
+		s = append(s, t)
+		//fmt.Printf("%#v\n", t)
 	}
 	return
 }
@@ -166,11 +204,82 @@ func (e *ElasticSearch) InsertFolder(folder Folder) {
 
 //添加gFile信息
 func (e *ElasticSearch) InsertGFile(gFile GeneralFile) {
-	put, err := e.Client.Index().Index("gfile").Type("gfile").BodyJson(gFile).Do(context.Background())
+	id := strconv.Itoa(gFile.GId)
+	put, err := e.Client.Index().Index("gfile").Type("gfile").Id(id).BodyJson(gFile).Do(context.Background())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	log.Printf("Indexed tweet %s to index s%s, type %s\n", put.Id, put.Index, put.Type)
+	log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet0信息
+func (e *ElasticSearch) InsertSheet0(s Sheet0) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet0").Type("sheet0").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet1信息
+func (e *ElasticSearch) InsertSheet1(s Sheet1) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet1").Type("sheet1").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet2信息
+func (e *ElasticSearch) InsertSheet2(s Sheet2) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet2").Type("sheet2").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet3信息
+func (e *ElasticSearch) InsertSheet3(s Sheet3) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet3").Type("sheet3").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet4信息
+func (e *ElasticSearch) InsertSheet4(s Sheet4) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet4").Type("sheet4").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet5信息
+func (e *ElasticSearch) InsertSheet5(s Sheet5) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet5").Type("sheet5").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+}
+
+//添加sheet6信息
+func (e *ElasticSearch) InsertSheet6(s Sheet6) {
+	id := strconv.Itoa(s.SheetId)
+	_, err := e.Client.Index().Index("sheet6").Type("sheet6").Id(id).BodyJson(s).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
 }
 
 //根据项目名称搜索项目
@@ -269,4 +378,50 @@ func (e *ElasticSearch) DeleteGFileByFileId(proId int, fileId int) {
 		log.Fatal(err.Error())
 	}
 	log.Printf("%v\n", res)
+}
+
+//根据项目名和materialName搜索sheet5
+func (e *ElasticSearch) SearchMaterialByProName(proName string, materialName string) []Sheet5 {
+	boolQuery := elastic.NewBoolQuery()
+	matchQuery1 := elastic.NewMatchQuery("ProName", proName)
+	matchQuery2 := elastic.NewMatchQuery("Col2", materialName)
+	boolQuery.Must(matchQuery1, matchQuery2)
+	service := e.Client.Search("sheet5").Type("sheet5").Size(10000)
+	var res *elastic.SearchResult
+	var err error
+	if proName == "" && materialName == "" {
+		res, err = service.Do(context.Background())
+	} else if proName == "" {
+		res, err = service.Query(matchQuery2).Do(context.Background())
+	} else if materialName == "" {
+		res, err = service.Query(matchQuery1).Do(context.Background())
+	} else {
+		res, err = service.Query(boolQuery).Do(context.Background())
+	}
+	return printSheet5(res, err)
+}
+
+//根据项目名和materialName搜索sheet6
+func (e *ElasticSearch) SearchGlobalByProName(proName string, globalName string) []Sheet6 {
+	boolQuery := elastic.NewBoolQuery()
+	matchQuery1 := elastic.NewMatchQuery("ProName", proName)
+	matchQuery2 := elastic.NewMatchQuery("Col4", globalName)
+	// termQuery1 := elastic.NewTermQuery("Col4", "")
+	termQuery2 := elastic.NewMatchQuery("Col4", "合计")
+	boolQuery2 := elastic.NewBoolQuery()
+	boolQuery2.MustNot(termQuery2)
+	boolQuery.Must(matchQuery1, matchQuery2, boolQuery2)
+	service := e.Client.Search("sheet6").Type("sheet6").Query(boolQuery2).Size(10000)
+	var res *elastic.SearchResult
+	var err error
+	if proName == "" && globalName == "" {
+		res, err = service.Do(context.Background())
+	} else if proName == "" {
+		res, err = service.Query(matchQuery2).Do(context.Background())
+	} else if globalName == "" {
+		res, err = service.Query(matchQuery1).Do(context.Background())
+	} else {
+		res, err = service.Query(boolQuery).Do(context.Background())
+	}
+	return printSheet6(res, err)
 }

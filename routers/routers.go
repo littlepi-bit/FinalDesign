@@ -58,5 +58,7 @@ func RouterInit() *gin.Engine {
 	r.GET("/UploadFolder", controller.GetFolderInfo)
 	r.GET("/searchProject", controller.SearchProject)
 	r.GET("/searchFile", controller.SearchFile)
+	r.GET("/searchMaterial", controller.SearchMaterial)
+	r.GET("/searchGlobal", controller.SearchGlobal)
 	return r
 }
