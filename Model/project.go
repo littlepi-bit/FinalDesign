@@ -42,7 +42,7 @@ type Unit struct {
 	Amount            string
 	Estimate          string
 	SafeCivilizedCost string
-	Fees              string
+	Fees              float64
 }
 
 type PriceTable struct {
@@ -118,7 +118,7 @@ type Sheet2 struct {
 	Col3      string
 	Col4      string
 	Col5      string
-	Col6      string
+	Col6      float64
 	Col7      string
 	Col8      string
 	Col9      string
@@ -152,7 +152,7 @@ type Sheet4 struct {
 	Col3      string
 	Col4      string
 	Col5      string
-	Col6      string
+	Col6      float64
 }
 
 type Sheet5 struct {
@@ -249,7 +249,7 @@ func (unit *Unit) UnitProjectToUnit(u UnitProject, ind Ind) {
 	unit.Amount = u.Cols[2]
 	unit.Estimate = u.Cols[3]
 	unit.SafeCivilizedCost = u.Cols[4]
-	unit.Fees = u.Cols[5]
+	unit.Fees, _ = strconv.ParseFloat(u.Cols[5], 64)
 	unit.UnitId = int(crc32.ChecksumIEEE([]byte(unit.UnitName + unit.IndividualName + unit.ProName + time.Now().String())))
 }
 
@@ -370,6 +370,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 		}
 	case "2":
 		for i := 0; i < n; i++ {
+			tmp, _ := strconv.ParseFloat(s.Col[i][5], 64)
 			s2 := Sheet2{
 				SheetId:   int(crc32.ChecksumIEEE([]byte(s.SheetName + s.Title + s.Col[i][1] + time.Now().String()))),
 				SheetName: s.SheetName,
@@ -383,7 +384,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 				Col3:      s.Col[i][2],
 				Col4:      s.Col[i][3],
 				Col5:      s.Col[i][4],
-				Col6:      s.Col[i][5],
+				Col6:      tmp,
 				Col7:      s.Col[i][6],
 				Col8:      s.Col[i][7],
 				Col9:      s.Col[i][8],
@@ -418,6 +419,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 		}
 	case "4":
 		for i := 0; i < n; i++ {
+			tmp, _ := strconv.ParseFloat(s.Col[i][5], 64)
 			s4 := Sheet4{
 				SheetId:   int(crc32.ChecksumIEEE([]byte(s.SheetName + s.Title + s.Col[i][1] + time.Now().String()))),
 				SheetName: s.SheetName,
@@ -431,7 +433,7 @@ func (t PriceTable) InserSheet(s Sheet) {
 				Col3:      s.Col[i][2],
 				Col4:      s.Col[i][3],
 				Col5:      s.Col[i][4],
-				Col6:      s.Col[i][5],
+				Col6:      tmp,
 			}
 			result := GlobalConn.Table("sheet4").Create(s4)
 			if result.Error != nil {

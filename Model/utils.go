@@ -6,6 +6,21 @@ import (
 	"time"
 )
 
+type Measure struct {
+	ProName        string
+	Total          float64
+	Price          string
+	MeasurePrice   float64
+	RulePrice      float64
+	MeasurePresent float64
+	RulePresent    float64
+}
+
+type Rule struct {
+	ProName   string
+	RulePrice float64
+}
+
 //搜索项目通过项目名
 func SearchProjectByProName(proName string) []Project {
 	return GlobalES.QueryByProjectName(proName)
@@ -88,4 +103,43 @@ func SearchMaterialPrice(materialName string, proName string) []Sheet5 {
 //搜索综合价格
 func SearchGlobalPrice(globalName string, proName string) []Sheet6 {
 	return GlobalES.SearchGlobalByProName(proName, globalName)
+}
+
+//搜索措施费规费
+func SearchMeasurePrice(proName string) []Measure {
+	pros := SearchProjectByProName(proName)
+	tmpPro := make(map[string]bool)
+	for _, pro := range pros {
+		tmpPro[pro.ProjectName] = true
+	}
+	var result []Measure
+	res := GlobalConn.Table("sheet2").
+		Select("sheet2.pro_name,project.total_cost_lower as price, sum(col6) as measure_price").
+		Joins("left join project on project.project_name=sheet2.pro_name").
+		Where("sheet2.col1=?", "合计").Group("sheet2.pro_name").Find(&result)
+	//fmt.Printf("%v\n", result)
+	fmt.Println(res.Error)
+	var result2 []Rule
+	res = GlobalConn.Table("unit").
+		Select("unit.pro_name, sum(fees) as rule_price").
+		Joins("left join project on project.project_name=unit.pro_name").
+		Group("unit.pro_name").Find(&result2)
+	fmt.Println(res.Error)
+	tmp := make(map[string]Rule)
+	for _, v := range result2 {
+		tmp[v.ProName] = v
+	}
+	ans := make([]Measure, 0)
+	for _, v := range result {
+		if !tmpPro[v.ProName] {
+			continue
+		}
+		v.Total, _ = strconv.ParseFloat(v.Price[:len(v.Price)-3], 64)
+		v.MeasurePresent = v.MeasurePrice / v.Total
+		v.RulePrice = tmp[v.ProName].RulePrice
+		v.RulePresent = v.RulePrice / v.Total
+		fmt.Println(v)
+		ans = append(ans, v)
+	}
+	return ans
 }

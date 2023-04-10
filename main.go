@@ -87,8 +87,8 @@ func main() {
 
 	//r.Run()
 	Model.OpenDatabase(false)
-	Model.InitElasticSearch()
-	// Model.EmptyDB()
+	Model.InitElasticSearch(true)
+	Model.EmptyDB()
 	// Model.EmptyES()
 	//Model.InitFolderTree()
 	defer Model.CloseDatabase()

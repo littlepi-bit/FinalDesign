@@ -24,14 +24,24 @@ type Employee struct {
 	Interests []string `json:"interests"`
 }
 
+type DocScore struct {
+	ProName string
+	Score   float64
+}
+
 var GlobalES *ElasticSearch
 
-func InitElasticSearch() {
-	GlobalES = NewElasticSearch()
+func InitElasticSearch(remote bool) {
+	GlobalES = NewElasticSearch(remote)
 	GlobalES.Init()
 }
 
-func NewElasticSearch() *ElasticSearch {
+func NewElasticSearch(remote bool) *ElasticSearch {
+	if remote {
+		return &ElasticSearch{
+			Host: "http://120.77.12.35:9200/",
+		}
+	}
 	return &ElasticSearch{
 		Host: "http://127.0.0.1:9200/",
 	}
@@ -45,7 +55,7 @@ func EmptyES() {
 //初始化
 func (e *ElasticSearch) Init() {
 	var err error
-	e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host))
+	e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host), elastic.SetBasicAuth("elastic", "elastic"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -284,9 +294,14 @@ func (e *ElasticSearch) InsertSheet6(s Sheet6) {
 
 //根据项目名称搜索项目
 func (e *ElasticSearch) QueryByProjectName(proName string) []Project {
-	matchPhraseQuery := elastic.NewMatchQuery("ProjectName", proName)
-	res, err := e.Client.Search("management").Type("project").Query(matchPhraseQuery).Do(context.Background())
-	return printProjects(res, err)
+	if proName == "" {
+		res, err := e.Client.Search("management").Type("project").Do(context.Background())
+		return printProjects(res, err)
+	} else {
+		matchPhraseQuery := elastic.NewMatchQuery("ProjectName", proName)
+		res, err := e.Client.Search("management").Type("project").Query(matchPhraseQuery).Do(context.Background())
+		return printProjects(res, err)
+	}
 }
 
 func (e *ElasticSearch) QueryByIndividualProjectName(indName string) []Project {
@@ -406,10 +421,10 @@ func (e *ElasticSearch) SearchGlobalByProName(proName string, globalName string)
 	boolQuery := elastic.NewBoolQuery()
 	matchQuery1 := elastic.NewMatchQuery("ProName", proName)
 	matchQuery2 := elastic.NewMatchQuery("Col4", globalName)
-	// termQuery1 := elastic.NewTermQuery("Col4", "")
+	termQuery1 := elastic.NewWildcardQuery("Col4", "*")
 	termQuery2 := elastic.NewMatchQuery("Col4", "合计")
 	boolQuery2 := elastic.NewBoolQuery()
-	boolQuery2.MustNot(termQuery2)
+	boolQuery2.MustNot(termQuery2).Filter(termQuery1)
 	boolQuery.Must(matchQuery1, matchQuery2, boolQuery2)
 	service := e.Client.Search("sheet6").Type("sheet6").Query(boolQuery2).Size(10000)
 	var res *elastic.SearchResult
@@ -424,4 +439,27 @@ func (e *ElasticSearch) SearchGlobalByProName(proName string, globalName string)
 		res, err = service.Query(boolQuery).Do(context.Background())
 	}
 	return printSheet6(res, err)
+}
+
+func (e *ElasticSearch) GetRelevanceDocByProName(proName string) (docScore []DocScore) {
+	mlt := elastic.NewMoreLikeThisQuery()
+	tmp := e.QueryByProjectName(proName)[0]
+	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp)
+	mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
+	var pro Project
+	res, err := e.Client.Search().Profile(true).Human(true).Index("management").Type("project").Query(mlt).Do(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	//fmt.Printf("%v\n", res.Profile.Shards[0].Searches[0].Query[0].Breakdown)
+	for i, v := range res.Each(reflect.TypeOf(pro)) {
+		t := v.(Project)
+		fmt.Printf("%s: %f\n", t.ProjectName, *res.Hits.Hits[i].Score)
+		d := DocScore{
+			ProName: t.ProjectName,
+			Score:   *res.Hits.Hits[i].Score,
+		}
+		docScore = append(docScore, d)
+	}
+	return
 }

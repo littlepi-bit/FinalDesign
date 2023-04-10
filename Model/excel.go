@@ -303,8 +303,8 @@ func (f File) SaveFile() {
 
 //存储到ElasticSearch中
 func (excel *Excel) InsertElasticSearch() {
-	es := NewElasticSearch()
-	es.Init()
-	es.InsertProject(excel.Projects)
+	// es := NewElasticSearch()
+	// es.Init()
+	GlobalES.InsertProject(excel.Projects)
 	// es.InsertFile(excel.Files)
 }

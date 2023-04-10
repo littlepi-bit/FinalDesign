@@ -258,3 +258,10 @@ func (controller *Controller) SearchGlobal(c *gin.Context) {
 	s := Model.SearchGlobalPrice(globalName, proName)
 	c.JSON(http.StatusOK, s)
 }
+
+//搜索措施费规费
+func (controller *Controller) SearchMeasure(c *gin.Context) {
+	proName := c.Query("proName")
+	s := Model.SearchMeasurePrice(proName)
+	c.JSON(http.StatusOK, s)
+}
