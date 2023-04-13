@@ -87,9 +87,9 @@ func main() {
 
 	//r.Run()
 	Model.OpenDatabase(false)
-	Model.InitElasticSearch(true)
+	Model.InitElasticSearch(false)
 	Model.EmptyDB()
-	// Model.EmptyES()
+	Model.EmptyES()
 	//Model.InitFolderTree()
 	defer Model.CloseDatabase()
 	if err := r.Run(":8085"); err != nil {

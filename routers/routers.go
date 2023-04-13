@@ -61,5 +61,6 @@ func RouterInit() *gin.Engine {
 	r.GET("/searchMaterial", controller.SearchMaterial)
 	r.GET("/searchGlobal", controller.SearchGlobal)
 	r.GET("/searchMeasure", controller.SearchMeasure)
+	r.GET("/getReleventDoc", controller.GetRelevantDoc)
 	return r
 }

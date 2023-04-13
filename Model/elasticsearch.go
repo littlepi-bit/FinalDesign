@@ -7,6 +7,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/olivere/elastic/v7"
 )
@@ -25,15 +26,21 @@ type Employee struct {
 }
 
 type DocScore struct {
-	ProName string
-	Score   float64
+	ProName   string             `json:"proName"`
+	Score     float64            `json:"score"`
+	TermScore map[string]float64 `json:"termScore"`
+}
+
+type ProjectDoc struct {
+	ProName     string
+	ReleventDoc []DocScore
 }
 
 var GlobalES *ElasticSearch
 
 func InitElasticSearch(remote bool) {
 	GlobalES = NewElasticSearch(remote)
-	GlobalES.Init()
+	GlobalES.Init(remote)
 }
 
 func NewElasticSearch(remote bool) *ElasticSearch {
@@ -53,9 +60,13 @@ func EmptyES() {
 }
 
 //初始化
-func (e *ElasticSearch) Init() {
+func (e *ElasticSearch) Init(remote bool) {
 	var err error
-	e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host), elastic.SetBasicAuth("elastic", "elastic"))
+	if remote {
+		e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host), elastic.SetBasicAuth("elastic", "elastic"))
+	} else {
+		e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host))
+	}
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -109,6 +120,11 @@ func (e *ElasticSearch) Delete() {
 		}
 		fmt.Printf("delete result %s\n", res)
 	}
+	res, err = e.Client.DeleteByQuery("prodoc").Query(query).Do(context.Background())
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	fmt.Printf("delete result %s\n", res)
 }
 
 func (e *ElasticSearch) Query() {
@@ -193,7 +209,7 @@ func printSheet6(res *elastic.SearchResult, err error) (s []Sheet6) {
 
 //添加项目信息
 func (e *ElasticSearch) InsertProject(pro Project) {
-	put, err := e.Client.Index().Index("management").Type("project").BodyJson(pro).Do(context.Background())
+	put, err := e.Client.Index().Index("management").Type("project").BodyJson(pro).Refresh("true").Do(context.Background())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -292,6 +308,43 @@ func (e *ElasticSearch) InsertSheet6(s Sheet6) {
 	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
 }
 
+//添加项目关联信息
+func (e *ElasticSearch) InsertRelevance(pro Project) {
+	rel := e.GetRelevanceByPro(pro)
+	proDoc := ProjectDoc{
+		ProName:     pro.ProjectName,
+		ReleventDoc: rel,
+	}
+	put, err := e.Client.Index().Index("prodoc").Type("reldoc").BodyJson(proDoc).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
+	docMap := make(map[string]DocScore)
+	for _, r := range proDoc.ReleventDoc {
+		docMap[r.ProName] = r
+	}
+	for _, s := range rel {
+		if s.ProName == proDoc.ProName {
+			continue
+		}
+		id, tmp := e.QueryByDocName(s.ProName)
+		if id == "" {
+			continue
+		}
+		tmp.ReleventDoc = append(tmp.ReleventDoc, DocScore{
+			ProName:   proDoc.ProName,
+			Score:     docMap[tmp.ProName].Score,
+			TermScore: docMap[tmp.ProName].TermScore,
+		})
+		_, err := e.Client.Update().Index("prodoc").Type("reldoc").Id(id).Doc(tmp).Refresh("true").Do(context.Background())
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+}
+
 //根据项目名称搜索项目
 func (e *ElasticSearch) QueryByProjectName(proName string) []Project {
 	if proName == "" {
@@ -304,12 +357,14 @@ func (e *ElasticSearch) QueryByProjectName(proName string) []Project {
 	}
 }
 
+//根据单项工程名搜索项目
 func (e *ElasticSearch) QueryByIndividualProjectName(indName string) []Project {
 	matchPhraseQuery := elastic.NewMatchQuery("IndividualProjects.IndividualProjectName", indName)
 	res, err := e.Client.Search("management").Type("project").Query(matchPhraseQuery).Do(context.Background())
 	return printProjects(res, err)
 }
 
+//根据单位工程名搜索项目
 func (e *ElasticSearch) QueryByUnitProjectName(unitName string) []Project {
 	matchPhraseQuery := elastic.NewMatchQuery("IndividualProjects.UnitProjects.UnitName", unitName)
 	res, err := e.Client.Search("management").Type("project").Query(matchPhraseQuery).Do(context.Background())
@@ -318,7 +373,7 @@ func (e *ElasticSearch) QueryByUnitProjectName(unitName string) []Project {
 
 //根据项目名称精确查询项目
 func (e *ElasticSearch) TermQueryByProjectName(proName string) []Project {
-	termQuery := elastic.NewTermQuery("ProjectName", proName)
+	termQuery := elastic.NewTermQuery("ProjectName.keyword", proName)
 	res, err := e.Client.Search("management").Type("project").Query(termQuery).Do(context.Background())
 	return printProjects(res, err)
 }
@@ -341,6 +396,21 @@ func (e *ElasticSearch) QueryByGFileId(proId int, GId int) []GeneralFile {
 	boolQuery.Must(termQuery, matchQuery)
 	res, err := e.Client.Search("gfile").Type("gfile").Query(boolQuery).Do(context.Background())
 	return printGFiles(res, err)
+}
+
+//根据文档名搜索相似度
+func (e *ElasticSearch) QueryByDocName(docName string) (string, ProjectDoc) {
+	termQuery := elastic.NewTermQuery("ProName.keyword", docName)
+	res, err := e.Client.Search("prodoc").Type("reldoc").Query(termQuery).Do(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	var p ProjectDoc
+	for i, v := range res.Each(reflect.TypeOf(p)) {
+		t := v.(ProjectDoc)
+		return res.Hits.Hits[i].Id, t
+	}
+	return "", ProjectDoc{}
 }
 
 //删除文件
@@ -441,13 +511,17 @@ func (e *ElasticSearch) SearchGlobalByProName(proName string, globalName string)
 	return printSheet6(res, err)
 }
 
-func (e *ElasticSearch) GetRelevanceDocByProName(proName string) (docScore []DocScore) {
+//获取关联文档
+func (e *ElasticSearch) GetRelevantDocByProName(proName string) (docScore []DocScore) {
 	mlt := elastic.NewMoreLikeThisQuery()
-	tmp := e.QueryByProjectName(proName)[0]
-	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp)
+	tmp := e.TermQueryByProjectName(proName)
+	if len(tmp) == 0 {
+		return []DocScore{}
+	}
+	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp[0])
 	mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
 	var pro Project
-	res, err := e.Client.Search().Profile(true).Human(true).Index("management").Type("project").Query(mlt).Do(context.Background())
+	res, err := e.Client.Search().Index("management").Type("project").Query(mlt).Do(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -458,6 +532,61 @@ func (e *ElasticSearch) GetRelevanceDocByProName(proName string) (docScore []Doc
 		d := DocScore{
 			ProName: t.ProjectName,
 			Score:   *res.Hits.Hits[i].Score,
+		}
+		docScore = append(docScore, d)
+	}
+	return
+}
+
+//获取两个文档的关联度
+func (e *ElasticSearch) GetRelevanceByProName(proName1 string, proName2 string) DocScore {
+	mlt := elastic.NewMoreLikeThisQuery()
+	tmp := e.QueryByProjectName(proName1)[0]
+	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp)
+	mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
+	termQuery := elastic.NewTermQuery("ProjectName", proName2)
+	boolQuery := elastic.NewBoolQuery()
+	boolQuery.Must(termQuery, mlt)
+	var pro Project
+	res, err := e.Client.Search().Index("management").Type("project").Query(boolQuery).Do(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i := range res.Each(reflect.TypeOf(pro)) {
+		fmt.Println(*res.Hits.Hits[i].Score)
+	}
+	return DocScore{}
+}
+
+//获取项目文档的关联度
+func (e *ElasticSearch) GetRelevanceByPro(pro Project) (docScore []DocScore) {
+	mlt := elastic.NewMoreLikeThisQuery()
+	doc := elastic.NewMoreLikeThisQueryItem().Doc(pro)
+	mlt.MinimumShouldMatch("30%").MinDocFreq(1).MaxQueryTerms(25).LikeItems(doc)
+	res, err := e.Client.Search().Index("management").Explain(true).Type("project").Query(mlt).Do(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	//fmt.Printf("%v\n", res.Profile.Shards[0].Searches[0].Query[0].Breakdown)
+	for i, v := range res.Each(reflect.TypeOf(pro)) {
+		t := v.(Project)
+		fmt.Printf("%s: %f\n", t.ProjectName, *res.Hits.Hits[i].Score)
+		//fmt.Printf("%v\n", res.Profile.Shards[0].Searches[0].Query[0])
+		//fmt.Println(res.Hits.Hits[i].Explanation.Description)
+		//fmt.Printf("%v\n", res.Hits.Hits[0].Explanation.Details[i*50])
+		termScore := make(map[string]float64)
+		for _, v := range res.Hits.Hits[i].Explanation.Details {
+			if strings.Contains(v.Description, "IndividualProjects.UnitProjects.UnitName.keyword:") {
+				tmp := strings.Split(v.Description, ":")
+				strs := strings.Split(tmp[1], " ")
+				fmt.Printf("%v %f\n", strs[0], v.Value)
+				termScore[strs[0]] = v.Value
+			}
+		}
+		d := DocScore{
+			ProName:   t.ProjectName,
+			Score:     *res.Hits.Hits[i].Score,
+			TermScore: termScore,
 		}
 		docScore = append(docScore, d)
 	}

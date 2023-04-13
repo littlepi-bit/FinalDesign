@@ -9,13 +9,19 @@ import (
 	"strconv"
 
 	"github.com/olivere/elastic/v7"
+	"github.com/shakinm/xlsReader/xls"
 	"github.com/xuri/excelize/v2"
 )
 
 func main() {
 	//TestLike()
-	Model.InitElasticSearch(true)
-	Model.GlobalES.GetRelevanceDocByProName("北川")
+	//Model.InitElasticSearch(false)
+	//Model.GlobalES.GetRelevantDocByProName("北川羌族自治县传染病专科医院集中隔离留观中心项目")
+	//Model.GlobalES.GetRelevanceByProName("北川", "成都德川友邦印务有限公司新建厂区一期项目")
+	//TestDoc()
+	//TestTermQuery()
+	//TestQueryMatch()
+	TestNewExcel()
 }
 
 func TestExcelize() {
@@ -65,6 +71,18 @@ func TestExcelize() {
 // 		}
 // 	}
 // }
+
+func TestNewExcel() {
+	file, err := xls.OpenFile("./client/test6.xls")
+	if err != nil {
+		log.Fatalf("open excel file err: %v", err)
+	}
+	//s0, _ := file.GetSheet(0)
+	s1, _ := file.GetSheet(3)
+	for i := 0; i < 10; i++ {
+		fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, 1, i))
+	}
+}
 
 func TestAgg() {
 	Model.InitElasticSearch(false)
@@ -153,4 +171,42 @@ type myResult1 struct {
 type myResult2 struct {
 	ProName   string
 	RulePrice float64
+}
+
+func TestDoc() {
+	Model.InitElasticSearch(false)
+	res, err := Model.GlobalES.Client.Search("prodoc").Type("reldoc").Do(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	var p Model.ProjectDoc
+	for _, v := range res.Each(reflect.TypeOf(p)) {
+		t := v.(Model.ProjectDoc)
+		fmt.Printf("%v\n", t.ReleventDoc[0].TermScore)
+	}
+}
+
+func TestTermQuery() {
+	Model.InitElasticSearch(false)
+	res := Model.GlobalES.TermQueryByProjectName("变电站、电力通道完善工程")
+	fmt.Printf("%v\n", res)
+}
+
+func TestQueryMatch() {
+	Model.InitElasticSearch(false)
+	pro := Model.GlobalES.TermQueryByProjectName("成都德川友邦印务有限公司新建厂区一期项目")
+	Model.GlobalES.GetRelevanceByPro(pro[0])
+	// mlt := elastic.NewMoreLikeThisQuery()
+	// doc := elastic.NewMoreLikeThisQueryItem().Doc(pro[0])
+	// mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
+	// res, err := Model.GlobalES.Client.Search().Index("management").Type("project").Query(mlt).Do(context.Background())
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// //fmt.Printf("%v\n", res.Profile.Shards[0].Searches[0].Query[0].Breakdown)
+	// for i, v := range res.Each(reflect.TypeOf(pro)) {
+	// 	t := v.(Model.Project)
+	// 	fmt.Printf("%s: %f\n", t.ProjectName, *res.Hits.Hits[i].Score)
+	// 	//fmt.Printf("%v\n", res.Hits.Hits[i].Source)
+	// }
 }

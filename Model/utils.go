@@ -2,6 +2,7 @@ package Model
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -142,4 +143,14 @@ func SearchMeasurePrice(proName string) []Measure {
 		ans = append(ans, v)
 	}
 	return ans
+}
+
+//获取相似文档
+func GetRelevantDoc(proName string) []DocScore {
+	_, pro := GlobalES.QueryByDocName(proName)
+	sort.Slice(pro.ReleventDoc, func(i, j int) bool {
+		return pro.ReleventDoc[i].Score > pro.ReleventDoc[j].Score
+	})
+	fmt.Printf("%v\n", pro)
+	return pro.ReleventDoc
 }

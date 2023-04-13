@@ -153,8 +153,8 @@ func (excel *Excel) AnalyseXls(filePath string) {
 	sheet0.Col = append(sheet0.Col, []string{
 		"",
 		GetStrByRL(s0, 0, 1),
-		GetStrByRL(s1, 2, 4),
-		GetStrByRL(s1, 3, 4),
+		GetStrByRL(s1, 2, 6),
+		GetStrByRL(s1, 3, 6),
 		GetStrByRL(s1, 11, 6),
 		GetStrByRL(s1, 5, 1),
 		GetStrByRL(s0, 1, 0),
@@ -164,6 +164,9 @@ func (excel *Excel) AnalyseXls(filePath string) {
 	for i := 2; i < file.GetNumberSheets(); i++ {
 		sheet, _ := file.GetSheet(i)
 		start := 0
+		if strings.Contains(sheet.GetName(), "建设项目招标控制价汇总表") {
+			continue
+		}
 		if strings.Contains(sheet.GetName(), "单项工程") {
 			start = 4
 		} else {
@@ -172,7 +175,7 @@ func (excel *Excel) AnalyseXls(filePath string) {
 
 		tmp := Sheet{
 			SheetName: sheet.GetName(),
-			Title:     GetStrByRL(sheet, 0, 0),
+			Title:     GetStrByRL(sheet, 1, 2),
 			RowNum:    int(sheet.GetNumberRows()) - start,
 			ColNum:    0,
 			Row:       []string{},
@@ -181,13 +184,17 @@ func (excel *Excel) AnalyseXls(filePath string) {
 		//fmt.Println(UnitProjectRows[sheet.Row(0).Col(0)])
 		if strings.Contains(tmp.SheetName, "单项工程") {
 			tmp.Row = append(tmp.Row, IndividualProjectRows...)
-			tmp.Title = GetStrByRL(sheet, 1, 1)
+			tmp.Title = GetStrByRL(sheet, 1, 2)
 		} else {
 			tmp.Row = append(tmp.Row, UnitProjectRows[tmp.Title]...)
 		}
 		for j := start; j < int(sheet.GetNumberRows()); j++ {
 			col := []string{}
 			for k := 0; k < len(tmp.Row); k++ {
+				tmp := GetStrByRL(sheet, j, k)
+				if tmp == "" {
+					continue
+				}
 				col = append(col, GetStrByRL(sheet, j, k))
 			}
 			tmp.Col = append(tmp.Col, col)
@@ -243,6 +250,9 @@ func (excel *Excel) SheetToProject() {
 				tmp = strings.Split(sheets[i].Title, "-")
 			} else if strings.Contains(sheets[i].Title, ")") {
 				tmp = strings.Split(sheets[i].Title, ")")
+			}
+			if len(tmp) < 1 {
+				log.Fatal(sheets[i].Title)
 			}
 			individual.IndividualProjectName = tmp[1]
 			individual.UnitProjectNum = len(sheets[i].Col) - 1
@@ -306,5 +316,6 @@ func (excel *Excel) InsertElasticSearch() {
 	// es := NewElasticSearch()
 	// es.Init()
 	GlobalES.InsertProject(excel.Projects)
+	GlobalES.InsertRelevance(excel.Projects)
 	// es.InsertFile(excel.Files)
 }

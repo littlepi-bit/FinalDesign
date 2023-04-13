@@ -265,3 +265,11 @@ func (controller *Controller) SearchMeasure(c *gin.Context) {
 	s := Model.SearchMeasurePrice(proName)
 	c.JSON(http.StatusOK, s)
 }
+
+//获取关联项目
+func (controller *Controller) GetRelevantDoc(c *gin.Context) {
+	proName := c.Query("proName")
+	fmt.Println("proName=" + proName)
+	d := Model.GetRelevantDoc(proName)
+	c.JSON(http.StatusOK, d)
+}
