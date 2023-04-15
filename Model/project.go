@@ -456,10 +456,10 @@ func (t PriceTable) InserSheet(s Sheet) {
 				Col3:      s.Col[i][2],
 				Col4:      s.Col[i][3],
 				Col5:      s.Col[i][4],
-				Col6:      s.Col[i][5],
-				Col7:      s.Col[i][6],
-				Col8:      s.Col[i][7],
-				Col9:      s.Col[i][8],
+				// Col6:      s.Col[i][5],
+				// Col7:      s.Col[i][6],
+				// Col8:      s.Col[i][7],
+				// Col9:      s.Col[i][8],
 			}
 			result := GlobalConn.Table("sheet5").Create(s5)
 			if result.Error != nil {

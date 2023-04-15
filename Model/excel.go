@@ -83,7 +83,8 @@ var UnitProjectRows = map[string][]string{
 	"总价措施项目清单计价表":  {"序号", " 项目编码", "项目名称", "计算基础", "费率(%)", "金额（元）", "调整费率(%)", "调整后金额(元)", "备注"},
 	"其他项目清单与计价汇总表": {"序号", "项目名称", "金额(元)", "结算金额（元）", "备注"},
 	"规费、税金项目计价表":   {"序号", "项目名称", "计算基础", "计算基数", "计算费率(%)", "金额(元)"},
-	" 承包人提供主要材料和工程设备一览表\r\n（适用造价信息差额调整法）": {"序号", "名称、规格、型号", "单位", "数量", "风险系数(%)", "基准单价(元)", "投标单价(元)", "发承包人确认单价(元)", "备注"},
+	//" 承包人提供主要材料和工程设备一览表\r\n（适用造价信息差额调整法）": {"序号", "名称、规格、型号", "单位", "数量", "风险系数(%)", "基准单价(元)", "投标单价(元)", "发承包人确认单价(元)", "备注"},
+	"主要材料价格表":      {"序号", "材料名称", "规格、型号及特殊要求", "单位", " ", "单价(元)", "备注"},
 	"分部分项工程量清单计价表": {"序号", "编码", "名称", "项目特征", "工作内容", "计量规则", "供材方式", "单位", "工程量", "综合单价（税前）", "人工费", "主材单价", "主材损耗", "主材费", "辅材费", "机械费", "管理费", "利润", "规费", "税金", "综合单价（含税）", "综合合价（税前）", "综合合价（含税）", "备注", "报价单位"},
 }
 var TableRows = []string{
@@ -175,7 +176,7 @@ func (excel *Excel) AnalyseXls(filePath string) {
 
 		tmp := Sheet{
 			SheetName: sheet.GetName(),
-			Title:     GetStrByRL(sheet, 1, 2),
+			Title:     GetStrByRL(sheet, 0, 0),
 			RowNum:    int(sheet.GetNumberRows()) - start,
 			ColNum:    0,
 			Row:       []string{},
@@ -190,9 +191,9 @@ func (excel *Excel) AnalyseXls(filePath string) {
 		}
 		for j := start; j < int(sheet.GetNumberRows()); j++ {
 			col := []string{}
+			flag := strings.Contains(sheet.GetName(), "主要材料价格表")
 			for k := 0; k < len(tmp.Row); k++ {
-				tmp := GetStrByRL(sheet, j, k)
-				if tmp == "" {
+				if flag && k == 4 {
 					continue
 				}
 				col = append(col, GetStrByRL(sheet, j, k))
@@ -250,9 +251,6 @@ func (excel *Excel) SheetToProject() {
 				tmp = strings.Split(sheets[i].Title, "-")
 			} else if strings.Contains(sheets[i].Title, ")") {
 				tmp = strings.Split(sheets[i].Title, ")")
-			}
-			if len(tmp) < 1 {
-				log.Fatal(sheets[i].Title)
 			}
 			individual.IndividualProjectName = tmp[1]
 			individual.UnitProjectNum = len(sheets[i].Col) - 1

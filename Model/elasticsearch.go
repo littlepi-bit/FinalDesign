@@ -521,7 +521,7 @@ func (e *ElasticSearch) GetRelevantDocByProName(proName string) (docScore []DocS
 	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp[0])
 	mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
 	var pro Project
-	res, err := e.Client.Search().Index("management").Type("project").Query(mlt).Do(context.Background())
+	res, err := e.Client.Search().Index("management").Explain(true).Type("project").Query(mlt).Do(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -529,9 +529,19 @@ func (e *ElasticSearch) GetRelevantDocByProName(proName string) (docScore []DocS
 	for i, v := range res.Each(reflect.TypeOf(pro)) {
 		t := v.(Project)
 		fmt.Printf("%s: %f\n", t.ProjectName, *res.Hits.Hits[i].Score)
+		termScore := make(map[string]float64)
+		for _, v := range res.Hits.Hits[i].Explanation.Details {
+			if strings.Contains(v.Description, "IndividualProjects.UnitProjects.UnitName.keyword:") {
+				tmp := strings.Split(v.Description, ":")
+				strs := strings.Split(tmp[1], " ")
+				fmt.Printf("%v %f\n", strs[0], v.Value)
+				termScore[strs[0]] = v.Value
+			}
+		}
 		d := DocScore{
-			ProName: t.ProjectName,
-			Score:   *res.Hits.Hits[i].Score,
+			ProName:   t.ProjectName,
+			Score:     *res.Hits.Hits[i].Score,
+			TermScore: termScore,
 		}
 		docScore = append(docScore, d)
 	}
@@ -543,7 +553,7 @@ func (e *ElasticSearch) GetRelevanceByProName(proName1 string, proName2 string) 
 	mlt := elastic.NewMoreLikeThisQuery()
 	tmp := e.QueryByProjectName(proName1)[0]
 	doc := elastic.NewMoreLikeThisQueryItem().Doc(tmp)
-	mlt.MinimumShouldMatch("30%").MinDocFreq(2).MaxQueryTerms(100).LikeItems(doc)
+	mlt.MinimumShouldMatch("30%").MinDocFreq(1).MaxQueryTerms(100).LikeItems(doc)
 	termQuery := elastic.NewTermQuery("ProjectName", proName2)
 	boolQuery := elastic.NewBoolQuery()
 	boolQuery.Must(termQuery, mlt)
