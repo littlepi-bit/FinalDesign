@@ -2,11 +2,14 @@ package Model
 
 import (
 	"fmt"
+	"hash/crc32"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/shakinm/xlsReader/xls"
+	"github.com/xuri/excelize/v2"
 )
 
 type Excel struct {
@@ -17,12 +20,13 @@ type Excel struct {
 }
 
 type Sheet struct {
-	SheetName string
-	Title     string
-	RowNum    int
-	ColNum    int
-	Row       []string
-	Col       [][]string
+	SheetName  string
+	Title      string
+	RowNum     int
+	ColNum     int
+	Row        []string
+	Col        [][]string
+	SheetFiles SheetFile
 }
 
 //总体工程
@@ -41,6 +45,7 @@ type IndividualProject struct {
 	UnitProjectNum        int
 	SumPrice              []string
 	UnitProjects          []UnitProject
+	IndFileUrl            string
 }
 
 //单位工程
@@ -66,13 +71,13 @@ type Table struct {
 
 //存储的文件
 type File struct {
-	FileId   int `gorm:"primary_key"`
+	FileId   int `gorm:"primary_key;type:bigint"`
 	FileName string
-	ProId    int
+	ProId    int `gorm:"type:bigint"`
 	ProName  string
-	FileByte []byte
+	FileByte []byte `gorm:"type:mediumblob"`
 	Time     time.Time
-	FolderId int
+	FolderId int `gorm:"type:bigint"`
 }
 
 var ProjectRow = []string{"序号", "项目名称", "总费用（小写）", "总费用（大写）", "时间", "招标人", "造价业务类型"}
@@ -186,6 +191,7 @@ func (excel *Excel) AnalyseXls(filePath string) {
 		if strings.Contains(tmp.SheetName, "单项工程") {
 			tmp.Row = append(tmp.Row, IndividualProjectRows...)
 			tmp.Title = GetStrByRL(sheet, 1, 2)
+			tmp.SheetFiles = excel.GetIndFile(sheet)
 		} else {
 			tmp.Row = append(tmp.Row, UnitProjectRows[tmp.Title]...)
 		}
@@ -200,6 +206,7 @@ func (excel *Excel) AnalyseXls(filePath string) {
 			}
 			tmp.Col = append(tmp.Col, col)
 		}
+		tmp.SheetFiles = excel.GetSheetFile(sheet)
 		sheets = append(sheets, tmp)
 	}
 	excel.Sheets = sheets
@@ -209,6 +216,92 @@ func (excel *Excel) AnalyseXls(filePath string) {
 //解析后缀为xlsx的文件
 func (excel *Excel) AnalyseXlsx(filePath string) {
 
+}
+
+//获取单项工程表页
+func (excel *Excel) GetIndFile(sheet *xls.Sheet) SheetFile {
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	rows := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"}
+	sheetName := sheet.GetName()
+	tmp, _ := sheet.GetRow(1)
+	row := strconv.Itoa(sheet.GetNumberRows())
+	f.SetSheetName("Sheet1", sheetName)
+	for j := 0; j < sheet.GetNumberRows(); j++ {
+		for i := 0; i < len(tmp.GetCols()); i++ {
+			//fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, j, i))
+			f.SetCellValue(sheetName, rows[i]+strconv.Itoa(j+1), GetStrByRL(sheet, j, i))
+		}
+	}
+	f.MergeCell(sheetName, "A1", "F1")
+	B2, _ := f.GetCellValue(sheetName, "B2")
+	if B2 == "" {
+		C2, _ := f.GetCellValue(sheetName, "C2")
+		f.SetCellValue(sheetName, "B2", C2)
+	}
+	f.MergeCell(sheetName, "B2", "D2")
+	f.MergeCell(sheetName, "D3", "f3")
+	f.MergeCell(sheetName, "A"+row, "B"+row)
+	f.MergeCell(sheetName, "A3", "A4")
+	f.MergeCell(sheetName, "B3", "B4")
+	f.MergeCell(sheetName, "C3", "C4")
+	buff, err := f.WriteToBuffer()
+	if err != nil {
+		log.Println(err)
+		return SheetFile{}
+	}
+	sheetFile := SheetFile{
+		SId:      int(crc32.ChecksumIEEE([]byte(sheetName + time.Now().String()))),
+		Name:     sheetName + ".xlsx",
+		FileByte: buff.Bytes(),
+	}
+	sheetFile.Url = prefix + "SheetFile/" + strconv.Itoa(sheetFile.SId)
+	sheetFile.SaveSheetFile()
+	return sheetFile
+}
+
+func (excel *Excel) GetSheetFile(sheet *xls.Sheet) SheetFile {
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	rows := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB"}
+	sheetName := sheet.GetName()
+	tmp, _ := sheet.GetRow(2)
+	//row := strconv.Itoa(sheet.GetNumberRows())
+	f.SetSheetName("Sheet1", sheetName)
+	for j := 0; j < sheet.GetNumberRows(); j++ {
+		for i := 0; i < len(tmp.GetCols()); i++ {
+			//fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, j, i))
+			f.SetCellValue(sheetName, rows[i]+strconv.Itoa(j+1), GetStrByRL(sheet, j, i))
+		}
+	}
+	f.MergeCell(sheetName, "A1", "F1")
+	B2, _ := f.GetCellValue(sheetName, "B2")
+	if B2 == "" {
+		C2, _ := f.GetCellValue(sheetName, "C2")
+		f.SetCellValue(sheetName, "B2", C2)
+	}
+	f.MergeCell(sheetName, "B2", "D2")
+	buff, err := f.WriteToBuffer()
+	if err != nil {
+		log.Println(err)
+		return SheetFile{}
+	}
+	sheetFile := SheetFile{
+		SId:      int(crc32.ChecksumIEEE([]byte(sheetName + time.Now().String()))),
+		Name:     sheetName + ".xlsx",
+		FileByte: buff.Bytes(),
+	}
+	sheetFile.Url = prefix + "SheetFile/" + strconv.Itoa(sheetFile.SId)
+	sheetFile.SaveSheetFile()
+	return sheetFile
 }
 
 //显示解析结果，num表示显示的表数目
@@ -244,6 +337,7 @@ func (excel *Excel) SheetToProject() {
 		if strings.Contains(sheets[i].SheetName, "单项工程") {
 			individual := NewIndividualProject()
 			individual.ProejctName = project.ProjectName
+			individual.IndFileUrl = sheets[i].SheetFiles.Url
 			tmp := []string{}
 			if strings.Contains(sheets[i].Title, "\\") {
 				tmp = strings.Split(sheets[i].Title, "\\")
@@ -309,11 +403,16 @@ func (f File) SaveFile() {
 	GlobalES.InsertFile(f)
 }
 
+func (sheetFile SheetFile) SaveSheetFile() {
+	GlobalConn.Table("sheet_files").Create(sheetFile)
+}
+
 //存储到ElasticSearch中
 func (excel *Excel) InsertElasticSearch() {
 	// es := NewElasticSearch()
 	// es.Init()
 	GlobalES.InsertProject(excel.Projects)
+	time.Sleep(time.Duration(2) * time.Second)
 	GlobalES.InsertRelevance(excel.Projects)
 	// es.InsertFile(excel.Files)
 }

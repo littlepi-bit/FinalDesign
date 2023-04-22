@@ -15,6 +15,7 @@ func Include(opts ...Option) {
 	options = append(options, opts...)
 }
 
+//跨域设置
 func cors() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		method := ctx.Request.Method
@@ -39,15 +40,12 @@ func RouterInit() *gin.Engine {
 	//跨域
 	r.Use(cors())
 
-	// for _, opt := range options {
-	// 	opt(r)
-	// }
-
 	controller := Controller.NewController()
 	r.GET("/files", controller.ViewAllFiles)
 	// r.GET("/files/:name", controller.DownloadFile)
 	r.GET("/downloadProFile", controller.GetProjectFile)
 	r.GET("/downloadFile/:fileId", controller.DownloadFile)
+	r.GET("/SheetFile/:SId", controller.GetSheetFile)
 	r.GET("/excel", controller.ExcelDetail)
 	r.GET("/getProject", controller.GetProject)
 	r.GET("/getAllProject", controller.GetAllProject)

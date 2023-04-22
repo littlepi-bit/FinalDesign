@@ -46,7 +46,8 @@ func InitElasticSearch(remote bool) {
 func NewElasticSearch(remote bool) *ElasticSearch {
 	if remote {
 		return &ElasticSearch{
-			Host: "http://120.77.12.35:9200/",
+			//Host: "http://120.77.12.35:9200/",
+			Host: "http://192.168.146.131:9200/",
 		}
 	}
 	return &ElasticSearch{
@@ -63,7 +64,7 @@ func EmptyES() {
 func (e *ElasticSearch) Init(remote bool) {
 	var err error
 	if remote {
-		e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host), elastic.SetBasicAuth("elastic", "elastic"))
+		e.Client, err = elastic.NewClient(elastic.SetURL(e.Host), elastic.SetSniff(false), elastic.SetBasicAuth("elastic", "elastic"))
 	} else {
 		e.Client, err = elastic.NewClient(elastic.SetSniff(false), elastic.SetURL(e.Host))
 	}
@@ -315,7 +316,7 @@ func (e *ElasticSearch) InsertRelevance(pro Project) {
 		ProName:     pro.ProjectName,
 		ReleventDoc: rel,
 	}
-	put, err := e.Client.Index().Index("prodoc").Type("reldoc").BodyJson(proDoc).Do(context.Background())
+	put, err := e.Client.Index().Index("prodoc").Type("reldoc").Refresh("true").BodyJson(proDoc).Do(context.Background())
 	if err != nil {
 		log.Fatal(err.Error())
 	}

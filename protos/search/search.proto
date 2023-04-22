@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package search;
+
+option go_package = "./;search";
+
+//消息结构
+message SearchRequest{
+    string name = 1;
+    //请求参数
+    bytes params = 2;
+}
+
+message SearchResponse{
+    string msg = 1;
+    bytes data = 2; 
+}
+
+service Searcher {
+    rpc SearchProject(SearchRequest) returns (SearchResponse){}
+}

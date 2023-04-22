@@ -2,8 +2,11 @@ package main
 
 import (
 	"FinalDesign/Model"
-	he "FinalDesign/protos/helloworld"
+	"encoding/json"
+
+	//he "FinalDesign/protos/helloworld"
 	pb "FinalDesign/protos/photo"
+	se "FinalDesign/protos/search"
 	"FinalDesign/routers"
 	"context"
 	"fmt"
@@ -15,7 +18,7 @@ import (
 )
 
 const (
-	port = ":8088"
+	port = ":50051"
 )
 
 func main() {
@@ -72,21 +75,29 @@ func main() {
 
 	r.GET("/rest/n/:name", func(ctx *gin.Context) {
 		name := ctx.Param("name")
-		req := &he.HelloRequest{Name: name}
-		client := he.NewGreeterClient(conn)
-		res, err := client.SayHello(context.Background(), req)
+		//req := &he.HelloRequest{Name: name}
+		req2 := &se.SearchRequest{Name: name}
+		//client := he.NewGreeterClient(conn)
+		client2 := se.NewSearcherClient(conn)
+		//res, err := client.SayHello(context.Background(), req)
+		res2, err := client2.SearchProject(context.Background(), req2)
 		if err != nil {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
 				"error": err.Error(),
 			})
 		}
+		pros := []Model.Project{}
+		err = json.Unmarshal(res2.Data, &pros)
 		ctx.JSON(http.StatusOK, gin.H{
-			"result": fmt.Sprint(res.Message),
+			//"result": fmt.Sprint(res.Message),
+			"Msg":       fmt.Sprint(res2.Msg),
+			"searchReq": fmt.Sprintf("%v\n", pros),
 		})
 	})
 
 	//r.Run()
 	Model.OpenDatabase(false)
+	//Model.InitDatebase()
 	Model.InitElasticSearch(false)
 	// Model.EmptyDB()
 	// Model.EmptyES()

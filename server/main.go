@@ -2,26 +2,32 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 
 	//导入在protos文件中定义的服务
-	pb "FinalDesign/protos/helloworld"
+	"FinalDesign/Model"
+	se "FinalDesign/protos/search"
 
 	"google.golang.org/grpc"
 )
 
 //定义一个结构体，作用是实现helloworld中的GreeterServer
 type server struct {
-	pb.UnimplementedGreeterServer
+	//pb.UnimplementedGreeterServer
+	se.UnimplementedSearcherServer
 }
 
-// SayHello implements helloworld.GreeterServer
-func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{
-		Message: "Hello " + in.Name,
+func (s *server) SearchProject(ctx context.Context, in *se.SearchRequest) (*se.SearchResponse, error) {
+	Model.InitElasticSearch(false)
+	pros := Model.SearchProjectByProName(in.Name)
+	tmp, _ := json.Marshal(pros)
+	return &se.SearchResponse{
+		Msg:  "查询成功",
+		Data: tmp,
 	}, nil
 }
 
@@ -41,7 +47,7 @@ func main() {
 	//实例化gRPC服务
 	s := grpc.NewServer()
 	//服务注册
-	pb.RegisterGreeterServer(s, &server{})
+	se.RegisterSearcherServer(s, &server{})
 	log.Printf("server listening at %v", lis.Addr())
 	//启动服务
 	if err := s.Serve(lis); err != nil {

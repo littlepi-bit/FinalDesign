@@ -22,6 +22,13 @@ type GeneralFile struct {
 	Url      string `json:"url"`
 }
 
+type SheetFile struct {
+	SId      int    `gorm:"primary_key;type:bigint;column:sId"`
+	Name     string `gorm:"text"`
+	Url      string
+	FileByte []byte `gorm:"type:mediumblob"`
+}
+
 func GetFileByFileId(fileId string) (file File) {
 	fId, _ := strconv.Atoi(fileId)
 	result := GlobalConn.Table("files").Where("file_id=?", fId).Find(&file)

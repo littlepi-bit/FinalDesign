@@ -18,10 +18,11 @@ func main() {
 	//Model.InitElasticSearch(false)
 	//Model.GlobalES.GetRelevantDocByProName("北川羌族自治县传染病专科医院集中隔离留观中心项目")
 	//Model.GlobalES.GetRelevanceByProName("北川", "成都德川友邦印务有限公司新建厂区一期项目")
-	TestDoc()
+	//TestDoc()
 	//TestTermQuery()
 	//TestQueryMatch()
 	//TestNewExcel()
+	TestSplitExcel()
 }
 
 func TestExcelize() {
@@ -199,4 +200,49 @@ func TestQueryMatch() {
 	Model.InitElasticSearch(false)
 	pro := Model.GlobalES.TermQueryByProjectName("成都德川友邦印务有限公司新建厂区一期项目")
 	Model.GlobalES.GetRelevanceByPro(pro[0])
+}
+
+func TestSplitExcel() {
+	file, err := xls.OpenFile("./client/test5.xls")
+	if err != nil {
+		log.Fatalf("open excel file err: %v", err)
+	}
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	//s0, _ := file.GetSheet(0)
+	s1, _ := file.GetSheet(3)
+	tmp, err := s1.GetRow(1)
+	row := strconv.Itoa(s1.GetNumberRows())
+	err = f.SetSheetName("Sheet1", s1.GetName())
+	if err != nil {
+		log.Fatal(err)
+	}
+	rows := []string{"A", "B", "C", "D", "E", "F", "G", "H"}
+	for j := 0; j < s1.GetNumberRows(); j++ {
+		for i := 0; i < len(tmp.GetCols()); i++ {
+			//fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, j, i))
+			f.SetCellValue(s1.GetName(), rows[i]+strconv.Itoa(j+1), Model.GetStrByRL(s1, j, i))
+		}
+	}
+	f.MergeCell(s1.GetName(), "A1", "F1")
+	B2, err := f.GetCellValue(s1.GetName(), "B2")
+	if B2 == "" {
+		C2, _ := f.GetCellValue(s1.GetName(), "C2")
+		f.SetCellValue(s1.GetName(), "B2", C2)
+	}
+	f.MergeCell(s1.GetName(), "B2", "D2")
+	f.MergeCell(s1.GetName(), "D3", "f3")
+	f.MergeCell(s1.GetName(), "A"+row, "B"+row)
+	f.MergeCell(s1.GetName(), "A3", "A4")
+	f.MergeCell(s1.GetName(), "B3", "B4")
+	f.MergeCell(s1.GetName(), "C3", "C4")
+	if err := f.SaveAs("./store/" + s1.GetName() + ".xlsx"); err != nil {
+		fmt.Println(err)
+	}
+	buff, err := f.WriteToBuffer()
+	buff.Bytes()
 }

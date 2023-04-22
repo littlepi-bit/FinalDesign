@@ -8,10 +8,10 @@ import (
 )
 
 type Folder struct {
-	FolderId       int `gorm:"primary_key"`
+	FolderId       int `gorm:"primary_key;type:bigint"`
 	FolderName     string
-	ProId          int
-	FatherFolderId int
+	ProId          int `gorm:"type:bigint"`
+	FatherFolderId int `gorm:"type:bigint"`
 	Level          int
 	FolderUrl      string
 	Time           time.Time

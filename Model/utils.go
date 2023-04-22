@@ -2,6 +2,7 @@ package Model
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"time"
@@ -47,6 +48,28 @@ func SearchProjectByProId(proId string) []Project {
 //根据文件名称搜索文件
 func SearchFileByFileName(proId int, fileName string) []GeneralFile {
 	return GlobalES.QueryByGFileName(proId, fileName)
+}
+
+//根据indId获取单项项目
+func GetIndByIndId(indId string) []Ind {
+	id, _ := strconv.Atoi(indId)
+	inds := make([]Ind, 0)
+	result := GlobalConn.Table("individual").Where("individual_id=?", id).Find(&inds)
+	if result.Error != nil {
+		log.Println(result.Error)
+	}
+	return inds
+}
+
+//根据SId获取SheetFile
+func GetSheetFileBySId(SId string) SheetFile {
+	id, _ := strconv.Atoi(SId)
+	f := SheetFile{}
+	result := GlobalConn.Table("sheet_files").Where("sId=?", id).First(&f)
+	if result.Error != nil {
+		log.Println(result.Error)
+	}
+	return f
 }
 
 //根据文件名删除文件
@@ -115,9 +138,9 @@ func SearchMeasurePrice(proName string) []Measure {
 	}
 	var result []Measure
 	res := GlobalConn.Table("sheet2").
-		Select("sheet2.pro_name,project.total_cost_lower as price, sum(col6) as measure_price").
+		Select("sheet2.pro_name,project.total_cost_lower as price, sum(col8) as measure_price").
 		Joins("left join project on project.project_name=sheet2.pro_name").
-		Where("sheet2.col1=?", "合计").Group("sheet2.pro_name").Find(&result)
+		Where("sheet2.col1=?", "合　　计").Group("sheet2.pro_name").Find(&result)
 	//fmt.Printf("%v\n", result)
 	fmt.Println(res.Error)
 	var result2 []Rule
@@ -136,9 +159,9 @@ func SearchMeasurePrice(proName string) []Measure {
 			continue
 		}
 		v.Total, _ = strconv.ParseFloat(v.Price[:len(v.Price)-3], 64)
-		v.MeasurePresent = v.MeasurePrice / v.Total
+		v.MeasurePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*v.MeasurePrice/v.Total), 64)
 		v.RulePrice = tmp[v.ProName].RulePrice
-		v.RulePresent = v.RulePrice / v.Total
+		v.RulePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*v.RulePrice/v.Total), 64)
 		fmt.Println(v)
 		ans = append(ans, v)
 	}

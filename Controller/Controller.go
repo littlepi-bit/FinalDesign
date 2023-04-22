@@ -119,12 +119,23 @@ func (controller *Controller) GetAllProject(c *gin.Context) {
 //获取工程信息文件
 func (controller *Controller) GetProjectFile(c *gin.Context) {
 	proId := c.Query("proId")
+	//通过项目id获取文件
 	file := Model.GetFileByProId(proId)
-	// c.Header("Content-Length", "-1")
 	c.Header("Content-Disposition", "attachment; filename="+file.FileName)
 	c.Writer.Write(file.FileByte)
 	c.JSON(http.StatusOK, gin.H{
 		"filename": file.FileName,
+	})
+}
+
+//获取单项工程文件
+func (controller *Controller) GetSheetFile(c *gin.Context) {
+	SId := c.Param("SId")
+	file := Model.GetSheetFileBySId(SId)
+	c.Header("Content-Disposition", "attachment; filename="+file.Name)
+	c.Writer.Write(file.FileByte)
+	c.JSON(http.StatusOK, gin.H{
+		"filename": file.Name,
 	})
 }
 
