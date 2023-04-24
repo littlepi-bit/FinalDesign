@@ -18,11 +18,12 @@ type Folder struct {
 }
 
 type FolderTree struct {
+	FolderId   int
 	FolderName string
 	Next       map[string]*FolderTree
 }
 
-var GlobalFolderTree map[int][]FolderTree
+var GlobalFolderTree map[int]map[string]*FolderTree
 
 func InitFolderTree() {
 	ProjectFolder := map[int][]Folder{}
@@ -31,8 +32,10 @@ func InitFolderTree() {
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}
+	GlobalFolderTree = make(map[int]map[string]*FolderTree)
 	for _, pro := range pros {
 		proId := pro.Id
+		GlobalFolderTree[proId] = make(map[string]*FolderTree)
 		folders := []Folder{}
 		result = GlobalConn.Table("folder").Where("pro_id=?", proId).Order("level").Find(&folders)
 		if result.Error != nil {
@@ -40,13 +43,18 @@ func InitFolderTree() {
 		}
 		ProjectFolder[proId] = folders
 		index := 0
+		if len(folders) == 0 {
+			continue
+		}
 		for i := 0; i <= folders[len(folders)-1].Level; i++ {
 			for folders[index].Level == i {
 				node := FolderTree{
+					FolderId:   folders[index].FolderId,
 					FolderName: folders[index].FolderName,
 					Next:       map[string]*FolderTree{},
 				}
-				GlobalFolderTree[proId] = append(GlobalFolderTree[proId], node)
+				GlobalFolderTree[proId][node.FolderName] = &node
+				index++
 			}
 		}
 	}
@@ -56,21 +64,35 @@ func CreateFolder(path []string, proId string) File {
 	n := len(path)
 	pId, _ := strconv.Atoi(proId)
 	i := 0
-	fatherId := 0
+	folderTree := GlobalFolderTree[pId]
+	var preFolder *FolderTree
 	for ; i < n-1; i++ {
-		folders := []Folder{}
-		GlobalConn.Table("folder").Where("pro_id=?", pId).Where("level=?", i).Find(&folders)
+		//todo: 用文件树替代数据查询
 		flag := false
-		for _, f := range folders {
-			if f.FolderName == path[i] {
+		for name, node := range folderTree {
+			if name == path[i] {
 				flag = true
-				fatherId = f.FolderId
+				preFolder = node
+				folderTree = node.Next
 				break
 			}
 		}
 		if !flag {
 			break
 		}
+		// folders := []Folder{}
+		// GlobalConn.Table("folder").Where("pro_id=?", pId).Where("level=?", i).Find(&folders)
+		// flag := false
+		// for _, f := range folders {
+		// 	if f.FolderName == path[i] {
+		// 		flag = true
+		// 		fatherId = f.FolderId
+		// 		break
+		// 	}
+		// }
+		// if !flag {
+		// 	break
+		// }
 	}
 	for ; i < n-1; i++ {
 		tmpFolder := Folder{
@@ -81,10 +103,18 @@ func CreateFolder(path []string, proId string) File {
 			FolderUrl:  prefix + "Folder/",
 			Time:       time.Now(),
 		}
-		if i != 0 {
-			tmpFolder.FatherFolderId = fatherId
+		tmpNode := &FolderTree{
+			FolderId:   tmpFolder.FolderId,
+			FolderName: tmpFolder.FolderName,
+			Next:       map[string]*FolderTree{},
 		}
-		fatherId = tmpFolder.FolderId
+		if i != 0 {
+			tmpFolder.FatherFolderId = preFolder.FolderId
+			preFolder.Next[tmpNode.FolderName] = tmpNode
+		} else {
+			GlobalFolderTree[pId][tmpNode.FolderName] = tmpNode
+		}
+		preFolder = tmpNode
 		tmpFolder.FolderUrl += strconv.Itoa(tmpFolder.FolderId)
 		result := GlobalConn.Table("folder").Create(&tmpFolder)
 		if result.Error != nil {
@@ -94,7 +124,7 @@ func CreateFolder(path []string, proId string) File {
 		GlobalES.InsertFolder(tmpFolder)
 	}
 	fileName := path[i]
-	if result := GlobalConn.Table("files").Where("folder_id=?", fatherId).Where("file_name=?", fileName).First(&File{}); result.Error == nil {
+	if result := GlobalConn.Table("files").Where("folder_id=?", preFolder.FolderId).Where("file_name=?", fileName).First(&File{}); result.Error == nil {
 		log.Fatal("存在同名文件")
 	}
 	file := File{
@@ -102,7 +132,7 @@ func CreateFolder(path []string, proId string) File {
 		FileName: fileName,
 		ProId:    pId,
 		ProName:  GetPorjectByProId(pId).ProjectName,
-		FolderId: fatherId,
+		FolderId: preFolder.FolderId,
 	}
 	return file
 }

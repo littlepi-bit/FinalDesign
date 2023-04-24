@@ -13,7 +13,8 @@ import (
 )
 
 type Controller struct {
-	ProId string
+	ProId  string
+	UserId int
 }
 
 func NewController() *Controller {
@@ -71,8 +72,8 @@ func (controller *Controller) ExcelDetail(c *gin.Context) {
 
 //上传文件后返回解析信息
 func (controller *Controller) ChunkUpload(c *gin.Context) {
-	fmt.Println(c.PostForm("folder"))
 	// fmt.Println(ctx.FormFile("upfile"))
+	fmt.Println(c.PostForm("folder"))
 	f, _ := c.FormFile("upfile")
 	files, fileHeader, _ := c.Request.FormFile("upfile")
 	PrefixPath := "./store/files"
@@ -90,6 +91,7 @@ func (controller *Controller) ChunkUpload(c *gin.Context) {
 	files.Read(byteData)
 	e := Model.Excel{
 		ExcelName: f.Filename,
+		UserId:    controller.UserId,
 		Sheets:    []Model.Sheet{},
 		Files: Model.File{
 			FileName: f.Filename,
@@ -143,11 +145,11 @@ func (controller *Controller) GetSheetFile(c *gin.Context) {
 func (controller *Controller) UploadFolder(c *gin.Context) {
 	proId := controller.ProId
 	fmt.Printf("proId=%s\n" + proId)
-	f, _ := c.FormFile("upfile")
+	// f, _ := c.FormFile("upfile")
 	files, fileHeader, _ := c.Request.FormFile("upfile")
 	path := c.PostForm("relativePath")
 	fmt.Println("相关路径为：" + path)
-	c.SaveUploadedFile(f, "./store/files/"+path)
+	// c.SaveUploadedFile(f, "./store/files/"+path)
 	byteData := make([]byte, fileHeader.Size)
 	files.Read(byteData)
 	paths := strings.Split(path, "/")
@@ -283,4 +285,62 @@ func (controller *Controller) GetRelevantDoc(c *gin.Context) {
 	fmt.Println("proName=" + proName)
 	d := Model.GetRelevantDoc(proName)
 	c.JSON(http.StatusOK, d)
+}
+
+//登录验证
+func (controller *Controller) LoginCheck(c *gin.Context) {
+	user := &Model.User{}
+	c.Bind(&user)
+	if user.Name == "" {
+		log.Println("用户名不能为空")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "用户名不能为空",
+		})
+		return
+	} else if user.Password == "" {
+		log.Println("密码不能为空")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "密码不能为空",
+		})
+		return
+	}
+	result := user.CheckUser()
+	fmt.Println(user)
+	if !result {
+		log.Println("密码或用户名错误！")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "密码或用户名错误！",
+		})
+		return
+	} else {
+		token := Model.GenerateToken(&Model.JWTClaims{
+			UserID:   user.UId,
+			Username: user.Name,
+			Password: user.Password,
+		})
+		// Model.SetHash(
+		// 	token,
+		// 	Model.JsontoString(gin.H{
+		// 		"userId":   user.UId,
+		// 		"userName": user.Name,
+		// 		"password": user.Password,
+		// 	}),
+		// 	time.Minute*5)
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "token", //你的cookie的名字
+			Value:    token,   //cookie值
+			Path:     "/",
+			Domain:   "",
+			MaxAge:   604800,
+			Secure:   false,
+			HttpOnly: false,
+			// SameSite: 4, //下面是详细解释
+		})
+		controller.UserId = user.UId
+		c.JSON(http.StatusOK, gin.H{
+			"token":    token,
+			"msg":      "ok",
+			"userName": user.Name,
+		})
+	}
 }

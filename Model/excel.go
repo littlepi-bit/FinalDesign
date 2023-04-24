@@ -14,6 +14,7 @@ import (
 
 type Excel struct {
 	ExcelName string
+	UserId    int
 	Sheets    []Sheet
 	Projects  Project
 	Files     File
@@ -412,7 +413,6 @@ func (excel *Excel) InsertElasticSearch() {
 	// es := NewElasticSearch()
 	// es.Init()
 	GlobalES.InsertProject(excel.Projects)
-	time.Sleep(time.Duration(2) * time.Second)
 	GlobalES.InsertRelevance(excel.Projects)
 	// es.InsertFile(excel.Files)
 }

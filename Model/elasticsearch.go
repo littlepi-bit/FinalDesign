@@ -47,7 +47,7 @@ func NewElasticSearch(remote bool) *ElasticSearch {
 	if remote {
 		return &ElasticSearch{
 			//Host: "http://120.77.12.35:9200/",
-			Host: "http://192.168.146.131:9200/",
+			Host: "http://192.168.146.134:9200/",
 		}
 	}
 	return &ElasticSearch{
@@ -316,7 +316,7 @@ func (e *ElasticSearch) InsertRelevance(pro Project) {
 		ProName:     pro.ProjectName,
 		ReleventDoc: rel,
 	}
-	put, err := e.Client.Index().Index("prodoc").Type("reldoc").Refresh("true").BodyJson(proDoc).Do(context.Background())
+	put, err := e.Client.Index().Index("prodoc").Type("reldoc").BodyJson(proDoc).Do(context.Background())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -338,7 +338,7 @@ func (e *ElasticSearch) InsertRelevance(pro Project) {
 			Score:     docMap[tmp.ProName].Score,
 			TermScore: docMap[tmp.ProName].TermScore,
 		})
-		_, err := e.Client.Update().Index("prodoc").Type("reldoc").Id(id).Doc(tmp).Refresh("true").Do(context.Background())
+		_, err := e.Client.Update().Index("prodoc").Type("reldoc").Id(id).Doc(tmp).Do(context.Background())
 		if err != nil {
 			log.Fatal(err)
 		}

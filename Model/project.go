@@ -12,6 +12,7 @@ var prefix = "http://localhost:8085/"
 
 type Pro struct {
 	Id                   int `gorm:"primary_key;type:bigint"`
+	UId                  int `gorm:"type:bigint;column:uid"`
 	ProjectName          string
 	IndividualProjectNum int
 	OrderNumber          string
@@ -228,8 +229,9 @@ func TestTable() {
 	}
 }
 
-func (pro *Pro) ProjectToPro(project Project) {
+func (pro *Pro) ProjectToPro(project Project, userId int) {
 	pro.ProjectName = project.ProjectName
+	pro.UId = userId
 	pro.TotalCostLower = project.Cols[2]
 	pro.TotalCostUpper = project.Cols[3]
 	pro.IndividualProjectNum = project.IndividualProjectNum
@@ -278,8 +280,9 @@ func (p *PriceTable) TabletoPriceTable(t Table, u Unit) {
 
 func (excel *Excel) InsertDB() {
 	p := Pro{}
-	p.ProjectToPro(excel.Projects)
+	p.ProjectToPro(excel.Projects, excel.UserId)
 	result := GlobalConn.Table("project").Create(p)
+	GlobalFolderTree[p.Id] = make(map[string]*FolderTree)
 	if result.Error != nil {
 		log.Fatal(result.Error)
 	}

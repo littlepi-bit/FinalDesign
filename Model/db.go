@@ -16,7 +16,7 @@ func OpenDatabase(remote bool) {
 	tmp := ""
 	if remote {
 		//tmp = "root:123456@(120.77.12.35:3306)/costfile?charset=utf8mb4&parseTime=True&loc=Local"
-		tmp = "root:123456@(192.168.146.131:3306)/costfile?charset=utf8mb4&parseTime=True&loc=Local"
+		tmp = "root:123456@(192.168.146.134:3306)/costfile?charset=utf8mb4&parseTime=True&loc=Local"
 	} else {
 		tmp = "root:123456@(127.0.0.1:3306)/costfile?charset=utf8mb4&parseTime=True&loc=Local"
 	}
@@ -46,9 +46,10 @@ func InitDatebase() {
 	GlobalConn.Table("sheet4").DropTable(&Sheet4{})
 	GlobalConn.Table("sheet5").DropTable(&Sheet5{})
 	GlobalConn.Table("sheet6").DropTable(&Sheet6{})
-	// GlobalConn.DropTable(&SheetFile{})
+	GlobalConn.DropTable(&SheetFile{})
 
 	GlobalConn.CreateTable(&SheetFile{})
+	GlobalConn.Table("user").CreateTable(&User{})
 	GlobalConn.Table("project").CreateTable(&Pro{})
 	GlobalConn.Table("individual").CreateTable(&Ind{})
 	GlobalConn.Table("unit").CreateTable(&Unit{})

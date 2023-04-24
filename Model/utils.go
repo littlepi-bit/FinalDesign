@@ -138,7 +138,7 @@ func SearchMeasurePrice(proName string) []Measure {
 	}
 	var result []Measure
 	res := GlobalConn.Table("sheet2").
-		Select("sheet2.pro_name,project.total_cost_lower as price, sum(col8) as measure_price").
+		Select("sheet2.pro_name,any_value(project.total_cost_lower) as price, sum(col8) as measure_price").
 		Joins("left join project on project.project_name=sheet2.pro_name").
 		Where("sheet2.col1=?", "合　　计").Group("sheet2.pro_name").Find(&result)
 	//fmt.Printf("%v\n", result)
