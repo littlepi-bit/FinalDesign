@@ -3,7 +3,7 @@
 date
 echo "If update StuManager?"
 read x1
-if [ $x1 = 'Y']
+if [ $x1 = 'Y' ]
 then
 cd go
 rm -rf new
@@ -31,7 +31,7 @@ cd ..
 fi
 echo "if update StuFront?"
 read x2
-if [ $x2 = 'Y']
+if [ $x2 = 'Y' ]
 then
 cd react
 rm -rf new
@@ -43,7 +43,7 @@ yarn
 yarn build
 echo "build again?"
 read b
-if [$b='Y']
+if [ $b='Y' ]
 then
 yarn build
 fi

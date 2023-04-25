@@ -47,14 +47,13 @@ func InitFolderTree() {
 			continue
 		}
 		for i := 0; i <= folders[len(folders)-1].Level; i++ {
-			for folders[index].Level == i {
+			for ; index < len(folders) && folders[index].Level == i; index++ {
 				node := FolderTree{
 					FolderId:   folders[index].FolderId,
 					FolderName: folders[index].FolderName,
 					Next:       map[string]*FolderTree{},
 				}
 				GlobalFolderTree[proId][node.FolderName] = &node
-				index++
 			}
 		}
 	}
