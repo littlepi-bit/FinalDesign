@@ -60,15 +60,15 @@ func (controller *Controller) AnalyseFile(c *gin.Context) {
 
 }
 
-// //返回Excel信息
-// func (controller *Controller) ExcelDetail(c *gin.Context) {
-// 	e := Model.Excel{
-// 		ExcelName: "test3.xls",
-// 		Sheets:    []Model.Sheet{},
-// 	}
-// 	e.AnalyseExcel("./client/" + e.ExcelName)
-// 	c.JSON(http.StatusOK, e.Sheets)
-// }
+//返回Excel信息
+func (controller *Controller) ExcelDetail(c *gin.Context) {
+	e := Model.Excel{
+		ExcelName: "test3.xls",
+		Sheets:    []Model.Sheet{},
+	}
+	e.AnalyseExcel("./client/" + e.ExcelName)
+	c.JSON(http.StatusOK, e.Sheets)
+}
 
 //上传文件后返回解析信息
 func (controller *Controller) ChunkUpload(c *gin.Context) {
@@ -76,17 +76,24 @@ func (controller *Controller) ChunkUpload(c *gin.Context) {
 	fmt.Println(c.PostForm("folder"))
 	// f, _ := c.FormFile("upfile")
 	files, fileHeader, _ := c.Request.FormFile("upfile")
-	// PrefixPath := "./store/files"
-	// _, err := os.Stat(PrefixPath)
-	// if os.IsNotExist(err) {
-	// 	err = os.Mkdir(PrefixPath, 0666)
-	// 	if err != nil {
-	// 		log.Fatal(err.Error())
-	// 	}
-	// }
-	// defer os.RemoveAll(PrefixPath)
-	// path := c.PostForm("relativePath")
-	// c.SaveUploadedFile(f, "./store/files/"+path)
+	_, err := os.Stat("./store")
+	if os.IsNotExist(err) {
+		err = os.Mkdir("store", 0666)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+	PrefixPath := "./store/files"
+	_, err = os.Stat(PrefixPath)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(PrefixPath, 0666)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+	defer os.RemoveAll(PrefixPath)
+	path := c.PostForm("relativePath")
+	c.SaveUploadedFile(fileHeader, "./store/files/"+path)
 	byteData := make([]byte, fileHeader.Size)
 	files.Read(byteData)
 	e := Model.Excel{
@@ -98,7 +105,7 @@ func (controller *Controller) ChunkUpload(c *gin.Context) {
 			FileByte: byteData,
 		},
 	}
-	e.AnalyseExcel(files, e.ExcelName)
+	e.AnalyseExcel("./store/files/" + e.ExcelName)
 	//e.ShowExcel(6)
 	go func() {
 		e.InsertDB()

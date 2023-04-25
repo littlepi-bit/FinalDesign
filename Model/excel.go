@@ -3,7 +3,6 @@ package Model
 import (
 	"fmt"
 	"hash/crc32"
-	"io"
 	"log"
 	"strconv"
 	"strings"
@@ -121,12 +120,12 @@ func NewProject() Project {
 }
 
 //解析分为解析xls和xlsx
-func (excel *Excel) AnalyseExcel(fileReader io.ReadSeeker, fileName string) {
-	tmp := strings.Split(fileName, ".")
+func (excel *Excel) AnalyseExcel(filePath string) {
+	tmp := strings.Split(filePath, ".")
 	if tmp[len(tmp)-1] == "xls" {
-		excel.AnalyseXls(fileReader)
+		excel.AnalyseXls(filePath)
 	} else {
-		excel.AnalyseXlsx(fileReader)
+		excel.AnalyseXlsx(filePath)
 	}
 }
 
@@ -143,9 +142,8 @@ func GetStrByRL(s *xls.Sheet, r, c int) string {
 }
 
 //解析后缀为xls的文件
-func (excel *Excel) AnalyseXls(fileReader io.ReadSeeker) {
-	file, err := xls.OpenReader(fileReader)
-	// file, err := xls.OpenFile(filePath)
+func (excel *Excel) AnalyseXls(filePath string) {
+	file, err := xls.OpenFile(filePath)
 	if err != nil {
 		log.Fatalf("open excel file err: %v", err)
 	}
@@ -217,7 +215,7 @@ func (excel *Excel) AnalyseXls(fileReader io.ReadSeeker) {
 }
 
 //解析后缀为xlsx的文件
-func (excel *Excel) AnalyseXlsx(fileReader io.ReadSeeker) {
+func (excel *Excel) AnalyseXlsx(filePath string) {
 
 }
 

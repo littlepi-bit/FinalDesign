@@ -101,8 +101,8 @@ func main() {
 	// Model.GlobalConn.Table("users").CreateTable(&Model.User{})
 	// Model.GlobalConn.Table("users").Create(&Model.User{UId: 212414, Name: "sad", Password: "123456"})
 	Model.InitElasticSearch(true)
-	Model.EmptyDB()
-	Model.EmptyES()
+	// Model.EmptyDB()
+	// Model.EmptyES()
 	Model.InitFolderTree()
 	defer Model.CloseDatabase()
 	if err := r.Run(":8085"); err != nil {
