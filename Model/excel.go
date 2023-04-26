@@ -413,7 +413,7 @@ func (excel *Excel) InsertElasticSearch() {
 	// es := NewElasticSearch()
 	// es.Init()
 	GlobalES.InsertProject(excel.Projects)
-	time.Sleep(time.Duration(5) * time.Second)
+	time.Sleep(time.Duration(2) * time.Minute)
 	GlobalES.InsertRelevance(excel.Projects)
 	// es.InsertFile(excel.Files)
 }
