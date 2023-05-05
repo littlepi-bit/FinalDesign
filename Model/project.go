@@ -547,6 +547,22 @@ func GetAllProject() (pros []Pro) {
 	return
 }
 
+func GetAllProjectAndInfo() (pros []Pro, info []Info) {
+	result := GlobalConn.Table("project").Find(&pros)
+	if result.Error != nil {
+		log.Fatal(result.Error)
+	}
+
+	for i, _ := range pros {
+		pros[i].FileUrl = fmt.Sprintf("%sdownloadProFile?proId=%d", prefix, pros[i].Id)
+	}
+	for _, pro := range pros {
+		i := GlobalES.QueryInfoByProName(pro.ProjectName)
+		info = append(info, i...)
+	}
+	return
+}
+
 //通过项目Id获取数据库中的项目信息
 func GetPorjectByProId(proId int) (pro Pro) {
 	result := GlobalConn.Table("project").Where("id=?", proId).Find(&pro)

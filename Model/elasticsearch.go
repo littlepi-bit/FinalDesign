@@ -126,6 +126,11 @@ func (e *ElasticSearch) Delete() {
 		log.Fatalln(err.Error())
 	}
 	fmt.Printf("delete result %s\n", res)
+	res, err = e.Client.DeleteByQuery("info").Query(query).Do(context.Background())
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	fmt.Printf("delete result %s\n", res)
 }
 
 func (e *ElasticSearch) Query() {
@@ -309,6 +314,19 @@ func (e *ElasticSearch) InsertSheet6(s Sheet6) {
 	//log.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
 }
 
+//添加项目信息表
+func (e *ElasticSearch) InsertInfo(i Info) {
+	termQuery := elastic.NewTermQuery("ProName.keyword", i.ProName)
+	_, err := e.Client.DeleteByQuery("info").Query(termQuery).Do(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+	_, err = e.Client.Index().Index("info").BodyJson(i).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
 //添加项目关联信息
 func (e *ElasticSearch) InsertRelevance(pro Project) {
 	rel := e.GetRelevanceByPro(pro)
@@ -377,6 +395,23 @@ func (e *ElasticSearch) TermQueryByProjectName(proName string) []Project {
 	termQuery := elastic.NewTermQuery("ProjectName.keyword", proName)
 	res, err := e.Client.Search("management").Type("project").Query(termQuery).Do(context.Background())
 	return printProjects(res, err)
+}
+
+//根据项目名搜索信息表
+func (e *ElasticSearch) QueryInfoByProName(proName string) []Info {
+	termQuery := elastic.NewTermQuery("ProName.keyword", proName)
+	res, err := e.Client.Search("info").Query(termQuery).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Info
+	var info = []Info{}
+	for _, v := range res.Each(reflect.TypeOf(typ)) {
+		t := v.(Info)
+		fmt.Println(t)
+		info = append(info, t)
+	}
+	return info
 }
 
 //根据文件名搜索通用文件

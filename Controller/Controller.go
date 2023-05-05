@@ -125,6 +125,20 @@ func (controller *Controller) GetAllProject(c *gin.Context) {
 	c.JSON(http.StatusOK, pros)
 }
 
+func (controller *Controller) GetAllProjectAndInfo(c *gin.Context) {
+	pros, info := Model.GetAllProjectAndInfo()
+	c.JSON(http.StatusOK, gin.H{
+		"projects": pros,
+		"info":     info,
+	})
+}
+
+func (controller *Controller) GetInfo(c *gin.Context) {
+	proName := c.Query("proName")
+	info := Model.GlobalES.QueryInfoByProName(proName)
+	c.JSON(http.StatusOK, info[0])
+}
+
 //获取工程信息文件
 func (controller *Controller) GetProjectFile(c *gin.Context) {
 	proId := c.Query("proId")
@@ -282,7 +296,8 @@ func (controller *Controller) SearchGlobal(c *gin.Context) {
 //搜索措施费规费
 func (controller *Controller) SearchMeasure(c *gin.Context) {
 	proName := c.Query("proName")
-	s := Model.SearchMeasurePrice(proName)
+	indName := c.Query("indName")
+	s := Model.SearchMeasurePrice(proName, indName)
 	c.JSON(http.StatusOK, s)
 }
 
@@ -350,4 +365,14 @@ func (controller *Controller) LoginCheck(c *gin.Context) {
 			"userName": user.Name,
 		})
 	}
+}
+
+func (controller *Controller) SendInfo(c *gin.Context) {
+	info := Model.Info{}
+	c.Bind(&info)
+	fmt.Println(info)
+	Model.GlobalES.InsertInfo(info)
+	c.JSON(http.StatusOK, gin.H{
+		"msg": "ok",
+	})
 }

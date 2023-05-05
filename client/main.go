@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/hankcs/gohanlp/hanlp"
 	"github.com/olivere/elastic/v7"
 	"github.com/shakinm/xlsReader/xls"
 	"github.com/xuri/excelize/v2"
@@ -22,7 +23,71 @@ func main() {
 	//TestTermQuery()
 	//TestQueryMatch()
 	//TestNewExcel()
-	TestSplitExcel()
+	// TestNlp()
+	TestDeleteInfo()
+	TestInfo()
+	//fmt.Println(len(Model.UnitProjectRows["单价措施项目清单与计价表"]))
+	//TestSplitExcel()
+}
+
+func TestDeleteInfo() {
+	Model.InitElasticSearch(false)
+	termQuery := elastic.NewTermQuery("ProName.keyword", "成都德川友邦印务有限公司新建厂区一期项目")
+	boolQuery := elastic.NewBoolQuery()
+	boolQuery.MustNot(termQuery)
+	res, err := Model.GlobalES.Client.DeleteByQuery("info").Query(boolQuery).Do(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Println(res.Deleted)
+}
+
+func TestInfo() {
+	Model.InitElasticSearch(false)
+	info := Model.GlobalES.QueryInfoByProName("成都德川友邦印务有限公司新建厂区一期项目")
+	fmt.Println(info)
+}
+
+func PrintCon(cons []hanlp.ConTuple) {
+	if cons == nil {
+		return
+	}
+	for _, con := range cons {
+		fmt.Println("key = " + con.Key)
+		PrintCon(con.Value)
+	}
+}
+
+func PrintRes(s *hanlp.HanResp) {
+	fmt.Println("Con:")
+	//PrintCon(s.Con)
+	fmt.Println(s)
+	// fmt.Println("Dep:")
+	// fmt.Println(s.Dep)
+	fmt.Println("NerPku")
+	fmt.Println(s.NerPku)
+	fmt.Println("NerMsra")
+	fmt.Println(s.NerMsra)
+	fmt.Println("Pos863")
+	fmt.Println(s.Pos863)
+	fmt.Println("s.PosPku")
+	fmt.Println(s.PosPku)
+	fmt.Println("TokFine")
+	fmt.Println(s.TokFine)
+	fmt.Println("TokCoarse")
+	fmt.Println(s.TokCoarse)
+	for i, _ := range s.TokFine {
+		for j, _ := range s.TokFine[i] {
+			fmt.Printf("%s: %s\n", s.TokFine[i][j], s.PosPku[i][j])
+		}
+	}
+}
+
+func TestNlp() {
+	client := hanlp.HanLPClient(hanlp.WithAuth("MjQ0NEBiYnMuaGFubHAuY29tOktkc3hOc2RaZklPdnFzd3I=")) // auth不填则匿名
+	s, _ := client.ParseObj("绵阳职业技术学院孵化楼", hanlp.WithLanguage("zh"), hanlp.WithTasks("ner/ontonotes"))
+	fmt.Println(s.NerOntonotes)
+	client.Parse("", hanlp.WithTokens())
 }
 
 func TestExcelize() {
@@ -74,15 +139,16 @@ func TestExcelize() {
 // }
 
 func TestNewExcel() {
-	file, err := xls.OpenFile("./client/test5.xls")
+	file, err := xls.OpenFile("./test5.xls")
 	if err != nil {
 		log.Fatalf("open excel file err: %v", err)
 	}
 	//s0, _ := file.GetSheet(0)
-	s1, _ := file.GetSheet(6)
-	for i := 0; i < 10; i++ {
-		fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, 0, i))
-	}
+	s1, _ := file.GetSheet(3)
+	fmt.Println(Model.GetStrByRL(s1, s1.GetNumberRows()-1, 3))
+	// for i := 0; i < 10; i++ {
+	// 	fmt.Println(strconv.Itoa(i) + "=" + Model.GetStrByRL(s1, 4, i))
+	// }
 }
 
 func TestAgg() {

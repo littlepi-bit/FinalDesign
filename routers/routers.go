@@ -49,6 +49,8 @@ func RouterInit() *gin.Engine {
 	// r.GET("/excel", controller.ExcelDetail)
 	r.GET("/getProject", controller.GetProject)
 	r.GET("/getAllProject", controller.GetAllProject)
+	r.GET("/getAllProjectAndInfo", controller.GetAllProjectAndInfo)
+	r.GET("/getInfo", controller.GetInfo)
 	r.GET("/getFolder/:folderId", controller.GetFolder)
 	r.POST("/chunkUpload", controller.ChunkUpload)
 	r.POST("/UploadFolder", controller.UploadFolder)
@@ -61,5 +63,6 @@ func RouterInit() *gin.Engine {
 	r.GET("/searchMeasure", controller.SearchMeasure)
 	r.GET("/getReleventDoc", controller.GetRelevantDoc)
 	r.POST("/loginCheck", controller.LoginCheck)
+	r.POST("/SendInfo", controller.SendInfo)
 	return r
 }

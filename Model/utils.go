@@ -16,6 +16,8 @@ type Measure struct {
 	RulePrice      float64
 	MeasurePresent float64
 	RulePresent    float64
+	IndUrl         string
+	IndMeasure     []Measure
 }
 
 type Rule struct {
@@ -130,15 +132,22 @@ func SearchGlobalPrice(globalName string, proName string) []Sheet6 {
 }
 
 //搜索措施费规费
-func SearchMeasurePrice(proName string) []Measure {
-	pros := SearchProjectByProName(proName)
+func SearchMeasurePrice(proName string, indName string) []Measure {
+	pros := []Project{}
+	if indName != "" {
+		pros = SearchProjectByIndName(indName)
+	} else {
+		pros = SearchProjectByProName(proName)
+	}
 	tmpPro := make(map[string]bool)
+	inds := make(map[string][]IndividualProject)
 	for _, pro := range pros {
 		tmpPro[pro.ProjectName] = true
+		inds[pro.ProjectName] = pro.IndividualProjects
 	}
 	var result []Measure
 	res := GlobalConn.Table("sheet2").
-		Select("sheet2.pro_name,any_value(project.total_cost_lower) as price, sum(col8) as measure_price").
+		Select("sheet2.pro_name,any_value(project.total_cost_lower) as price, sum(col6) as measure_price").
 		Joins("left join project on project.project_name=sheet2.pro_name").
 		Where("sheet2.col1=?", "合　　计").Group("sheet2.pro_name").Find(&result)
 	//fmt.Printf("%v\n", result)
@@ -158,10 +167,27 @@ func SearchMeasurePrice(proName string) []Measure {
 		if !tmpPro[v.ProName] {
 			continue
 		}
+		v.MeasurePrice = 0.0
 		v.Total, _ = strconv.ParseFloat(v.Price[:len(v.Price)-3], 64)
-		v.MeasurePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*v.MeasurePrice/v.Total), 64)
 		v.RulePrice = tmp[v.ProName].RulePrice
 		v.RulePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*v.RulePrice/v.Total), 64)
+		indMeasures := make([]Measure, 0)
+		for _, ind := range inds[v.ProName] {
+			indMeasure := Measure{
+				ProName: ind.IndividualProjectName,
+			}
+			indMeasure.Price = ind.SumPrice[0]
+			indMeasure.Total, _ = strconv.ParseFloat(ind.SumPrice[0], 64)
+			indMeasure.MeasurePrice, _ = strconv.ParseFloat(ind.SumPrice[2], 64)
+			indMeasure.RulePrice, _ = strconv.ParseFloat(ind.SumPrice[3], 64)
+			indMeasure.MeasurePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*indMeasure.MeasurePrice/indMeasure.Total), 64)
+			indMeasure.RulePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*indMeasure.RulePrice/indMeasure.Total), 64)
+			indMeasure.IndUrl = ind.IndFileUrl
+			indMeasures = append(indMeasures, indMeasure)
+			v.MeasurePrice += indMeasure.MeasurePrice
+		}
+		v.MeasurePresent, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", 100*v.MeasurePrice/v.Total), 64)
+		v.IndMeasure = indMeasures
 		fmt.Println(v)
 		ans = append(ans, v)
 	}
@@ -177,3 +203,4 @@ func GetRelevantDoc(proName string) []DocScore {
 	fmt.Printf("%v\n", pro)
 	return pro.ReleventDoc
 }
+
