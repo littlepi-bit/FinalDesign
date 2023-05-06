@@ -204,3 +204,9 @@ func GetRelevantDoc(proName string) []DocScore {
 	return pro.ReleventDoc
 }
 
+//更新知识图谱
+func UpdateGraph(info Info) {
+	graph := GlobalES.GetGraph()
+	graph.AddInfo(info)
+	GlobalES.InsertGraph(graph)
+}

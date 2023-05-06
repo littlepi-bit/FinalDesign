@@ -24,8 +24,9 @@ func main() {
 	//TestQueryMatch()
 	//TestNewExcel()
 	// TestNlp()
-	TestDeleteInfo()
-	TestInfo()
+	//TestDeleteInfo()
+	// TestInfo()
+	TestGraph()
 	//fmt.Println(len(Model.UnitProjectRows["单价措施项目清单与计价表"]))
 	//TestSplitExcel()
 }
@@ -44,8 +45,14 @@ func TestDeleteInfo() {
 
 func TestInfo() {
 	Model.InitElasticSearch(false)
-	info := Model.GlobalES.QueryInfoByProName("成都德川友邦印务有限公司新建厂区一期项目")
+	info := Model.GlobalES.GetAllInfo()
 	fmt.Println(info)
+}
+
+func TestGraph() {
+	Model.InitElasticSearch(false)
+	graph := Model.GlobalES.GetGraph()
+	fmt.Println(graph)
 }
 
 func PrintCon(cons []hanlp.ConTuple) {

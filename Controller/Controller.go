@@ -139,6 +139,11 @@ func (controller *Controller) GetInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, info[0])
 }
 
+func (controller *Controller) GetGraph(c *gin.Context) {
+	graph := Model.GlobalES.GetGraph()
+	c.JSON(http.StatusOK, graph.Enties)
+}
+
 //获取工程信息文件
 func (controller *Controller) GetProjectFile(c *gin.Context) {
 	proId := c.Query("proId")
@@ -372,6 +377,7 @@ func (controller *Controller) SendInfo(c *gin.Context) {
 	c.Bind(&info)
 	fmt.Println(info)
 	Model.GlobalES.InsertInfo(info)
+	Model.UpdateGraph(info)
 	c.JSON(http.StatusOK, gin.H{
 		"msg": "ok",
 	})

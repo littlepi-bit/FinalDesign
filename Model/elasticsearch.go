@@ -131,6 +131,11 @@ func (e *ElasticSearch) Delete() {
 		log.Fatalln(err.Error())
 	}
 	fmt.Printf("delete result %s\n", res)
+	res, err = e.Client.DeleteByQuery("graph").Query(query).Do(context.Background())
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	fmt.Printf("delete result %s\n", res)
 }
 
 func (e *ElasticSearch) Query() {
@@ -327,6 +332,19 @@ func (e *ElasticSearch) InsertInfo(i Info) {
 	}
 }
 
+//添加知识图谱
+func (e *ElasticSearch) InsertGraph(graph Graph) {
+	termQuery := elastic.NewTermQuery("Feature.keyword", graph.Feature)
+	_, err := e.Client.DeleteByQuery("graph").Query(termQuery).Do(context.Background())
+	if err != nil {
+		log.Println(err.Error())
+	}
+	_, err = e.Client.Index().Index("graph").BodyJson(graph).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
 //添加项目关联信息
 func (e *ElasticSearch) InsertRelevance(pro Project) {
 	rel := e.GetRelevanceByPro(pro)
@@ -397,6 +415,22 @@ func (e *ElasticSearch) TermQueryByProjectName(proName string) []Project {
 	return printProjects(res, err)
 }
 
+//获取所有信息表
+func (e *ElasticSearch) GetAllInfo() []Info {
+	res, err := e.Client.Search("info").Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Info
+	var info = []Info{}
+	for _, v := range res.Each(reflect.TypeOf(typ)) {
+		t := v.(Info)
+		fmt.Println(t)
+		info = append(info, t)
+	}
+	return info
+}
+
 //根据项目名搜索信息表
 func (e *ElasticSearch) QueryInfoByProName(proName string) []Info {
 	termQuery := elastic.NewTermQuery("ProName.keyword", proName)
@@ -412,6 +446,22 @@ func (e *ElasticSearch) QueryInfoByProName(proName string) []Info {
 		info = append(info, t)
 	}
 	return info
+}
+
+//获取知识图谱
+func (e *ElasticSearch) GetGraph() Graph {
+	res, err := e.Client.Search("graph").Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Graph
+	graphs := []Graph{}
+	for _, v := range res.Each(reflect.TypeOf(typ)) {
+		t := v.(Graph)
+		fmt.Println(t)
+		graphs = append(graphs, t)
+	}
+	return graphs[0]
 }
 
 //根据文件名搜索通用文件

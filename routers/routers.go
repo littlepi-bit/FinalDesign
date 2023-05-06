@@ -51,6 +51,7 @@ func RouterInit() *gin.Engine {
 	r.GET("/getAllProject", controller.GetAllProject)
 	r.GET("/getAllProjectAndInfo", controller.GetAllProjectAndInfo)
 	r.GET("/getInfo", controller.GetInfo)
+	r.GET("/getGraph", controller.GetGraph)
 	r.GET("/getFolder/:folderId", controller.GetFolder)
 	r.POST("/chunkUpload", controller.ChunkUpload)
 	r.POST("/UploadFolder", controller.UploadFolder)
