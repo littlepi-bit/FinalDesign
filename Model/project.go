@@ -194,9 +194,9 @@ type Sheet6 struct {
 	Col1         string
 	Col2         string
 	Col3         string
-	Col4         string
+	Col4         string `gorm:"type:text"`
 	Col5         string `gorm:"type:text"`
-	Col6         string
+	Col6         string `gorm:"type:text"`
 	Col7         string `gorm:"type:text"`
 	Col8         string
 	Col9         string

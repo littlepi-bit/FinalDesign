@@ -58,6 +58,7 @@ func RouterInit() *gin.Engine {
 	r.POST("/deleteFiles", controller.DeleteFile)
 	r.GET("/UploadFolder", controller.GetFolderInfo)
 	r.GET("/searchProject", controller.SearchProject)
+	r.POST("/smartSearch", controller.SmartSearch)
 	r.GET("/searchFile", controller.SearchFile)
 	r.GET("/searchMaterial", controller.SearchMaterial)
 	r.GET("/searchGlobal", controller.SearchGlobal)

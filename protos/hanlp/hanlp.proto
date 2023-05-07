@@ -1,17 +1,17 @@
 syntax = "proto3";
 
+option go_package = "./;hanlp";
+
 message HanlpRequest {
-    string str1 = 1;
-    string str2 = 2;
+    string search = 1;
 }
 
 message HanlpReply {
-    string Message = 1;
+    int32 res = 1;
+    string keyword = 2;
 }
 
 service HanlpServer {
-    rpc SayHello(HanlpRequest) returns (HanlpReply) {}
     //获取两个文本的语义相似度
     rpc Similarity(HanlpRequest) returns (HanlpReply) {}
-    //
 }

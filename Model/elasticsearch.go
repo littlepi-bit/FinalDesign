@@ -425,7 +425,7 @@ func (e *ElasticSearch) GetAllInfo() []Info {
 	var info = []Info{}
 	for _, v := range res.Each(reflect.TypeOf(typ)) {
 		t := v.(Info)
-		fmt.Println(t)
+		// fmt.Println(t)
 		info = append(info, t)
 	}
 	return info
@@ -442,7 +442,24 @@ func (e *ElasticSearch) QueryInfoByProName(proName string) []Info {
 	var info = []Info{}
 	for _, v := range res.Each(reflect.TypeOf(typ)) {
 		t := v.(Info)
-		fmt.Println(t)
+		// fmt.Println(t)
+		info = append(info, t)
+	}
+	return info
+}
+
+//模糊搜索信息表
+func (e *ElasticSearch) QueryInfoByMatchProName(proName string) []Info {
+	matchQuery := elastic.NewMatchQuery("ProName", proName)
+	res, err := e.Client.Search("info").Query(matchQuery).Do(context.Background())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	var typ Info
+	var info = []Info{}
+	for _, v := range res.Each(reflect.TypeOf(typ)) {
+		t := v.(Info)
+		// fmt.Println(t)
 		info = append(info, t)
 	}
 	return info

@@ -1,11 +1,17 @@
 package Model
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
+
+	hp "FinalDesign/protos/hanlp"
+
+	"google.golang.org/grpc"
 )
 
 type Measure struct {
@@ -209,4 +215,59 @@ func UpdateGraph(info Info) {
 	graph := GlobalES.GetGraph()
 	graph.AddInfo(info)
 	GlobalES.InsertGraph(graph)
+}
+
+func SmartSearch(query string) (ans string, pros []Project) {
+	//连接服务器
+	conn, err := grpc.Dial("localhost:8000", grpc.WithInsecure())
+	if err != nil {
+		log.Println("连接服务器失败", err)
+	}
+	defer conn.Close()
+
+	cli := hp.NewHanlpServerClient(conn)
+
+	infos := GlobalES.GetAllInfo()
+	proName := ""
+	for _, v := range infos {
+		if strings.Contains(query, v.ProName) {
+			proName = v.ProName
+			query = strings.Replace(query, v.ProName, "XX", 1)
+			break
+		}
+	}
+
+	//远程调用方法
+	reply, err := cli.Similarity(context.Background(), &hp.HanlpRequest{Search: query})
+	if err != nil {
+		log.Println("服务器错误：", err)
+		return "", pros
+	}
+	fmt.Println("reply=", reply)
+	if proName != "" {
+		pros = SearchProjectByProName(proName)
+		info := GlobalES.QueryInfoByMatchProName(proName)[0]
+		if reply.Res < 3 {
+			return info.Province + "/" + info.City + "/" + info.Area, pros
+		}
+		Answer := make([]string, 8)
+		Answer[0] = info.PartyA
+		Answer[1] = info.PartyB
+		Answer[2] = info.BType
+		Answer[3] = info.PType
+		Answer[4] = info.IType
+		Answer[5] = info.CType
+		Answer[6] = info.IType
+		Answer[7] = info.Price
+		return Answer[reply.Res-3], pros
+	} else {
+		graph := GlobalES.GetGraph()
+		if reply.Res == 12 || reply.Res == 13 {
+			PartyA := graph.Enties["甲方"]
+			return PartyA.Relationship[reply.Keyword].Name, pros
+		} else {
+			PartyB := graph.Enties["乙方"]
+			return PartyB.Relationship[reply.Keyword].Name, pros
+		}
+	}
 }

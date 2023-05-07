@@ -382,3 +382,13 @@ func (controller *Controller) SendInfo(c *gin.Context) {
 		"msg": "ok",
 	})
 }
+
+func (controller *Controller) SmartSearch(c *gin.Context) {
+	s := Model.SearchContent{}
+	c.Bind(&s)
+	ans, pros := Model.SmartSearch(s.Content)
+	c.JSON(http.StatusOK, gin.H{
+		"ans":  ans,
+		"pros": pros,
+	})
+}

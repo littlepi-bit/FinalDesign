@@ -12,6 +12,9 @@ import (
 	"github.com/olivere/elastic/v7"
 	"github.com/shakinm/xlsReader/xls"
 	"github.com/xuri/excelize/v2"
+	"google.golang.org/grpc"
+
+	hp "FinalDesign/protos/hanlp"
 )
 
 func main() {
@@ -26,7 +29,9 @@ func main() {
 	// TestNlp()
 	//TestDeleteInfo()
 	// TestInfo()
-	TestGraph()
+	// TestGraph()
+	TestSmartSearch()
+	// TestPyRpc()
 	//fmt.Println(len(Model.UnitProjectRows["单价措施项目清单与计价表"]))
 	//TestSplitExcel()
 }
@@ -41,6 +46,31 @@ func TestDeleteInfo() {
 		log.Println(err.Error())
 	}
 	fmt.Println(res.Deleted)
+}
+
+func TestPyRpc() {
+	//连接服务器
+	conn, err := grpc.Dial("localhost:8000", grpc.WithInsecure())
+	if err != nil {
+		log.Println("连接服务器失败", err)
+	}
+	defer conn.Close()
+
+	cli := hp.NewHanlpServerClient(conn)
+
+	//远程调用方法
+	reply, err := cli.Similarity(context.Background(), &hp.HanlpRequest{Search: "甲方为阳光建筑公司的项目有哪些"})
+	if err != nil {
+		log.Println("服务器错误：", err)
+		return
+	}
+	fmt.Println("reply=", reply)
+}
+
+func TestSmartSearch() {
+	Model.InitElasticSearch(false)
+	ans, _ := Model.SmartSearch("成都德川友邦印务有限公司新建厂区一期项目的建筑类型是什么")
+	fmt.Println(ans)
 }
 
 func TestInfo() {
