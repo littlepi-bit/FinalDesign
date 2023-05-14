@@ -96,14 +96,14 @@ func main() {
 	})
 
 	//r.Run()
-	Model.OpenDatabase(false)
+	Model.OpenDatabase(true)
 	// Model.InitDatebase()
 	// Model.GlobalConn.Table("users").CreateTable(&Model.User{})
 	// Model.GlobalConn.Table("users").Create(&Model.User{UId: 212414, Name: "sad", Password: "123456"})
-	Model.InitElasticSearch(false)
+	Model.InitElasticSearch(true)
 	// Model.EmptyDB()
-	// Model.EmptyES()
-	// Model.InitGraph()
+	//Model.EmptyES()
+	Model.InitGraph()
 	Model.InitFolderTree()
 
 	defer Model.CloseDatabase()

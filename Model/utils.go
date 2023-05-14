@@ -217,9 +217,9 @@ func UpdateGraph(info Info) {
 	GlobalES.InsertGraph(graph)
 }
 
-func SmartSearch(query string) (ans string, pros []Project) {
+func SmartSearch(query string) (prefix string, ans string, pros []Project) {
 	//连接服务器
-	conn, err := grpc.Dial("localhost:8000", grpc.WithInsecure())
+	conn, err := grpc.Dial("192.168.146.134:8000", grpc.WithInsecure())
 	if err != nil {
 		log.Println("连接服务器失败", err)
 	}
@@ -241,16 +241,18 @@ func SmartSearch(query string) (ans string, pros []Project) {
 	reply, err := cli.Similarity(context.Background(), &hp.HanlpRequest{Search: query})
 	if err != nil {
 		log.Println("服务器错误：", err)
-		return "", pros
+		return "服务器错误", "", pros
 	}
 	fmt.Println("reply=", reply)
 	if proName != "" {
 		pros = SearchProjectByProName(proName)
 		info := GlobalES.QueryInfoByMatchProName(proName)[0]
 		if reply.Res < 3 {
-			return info.Province + "/" + info.City + "/" + info.Area, pros
+			return fmt.Sprintf("%s的地区是：", proName), info.Province + "/" + info.City + "/" + info.Area, pros
+		} else if reply.Res == 10 {
+			return fmt.Sprintf("%s的总造价是：", proName), info.Price, pros
 		}
-		Answer := make([]string, 8)
+		Answer := make([]string, 7)
 		Answer[0] = info.PartyA
 		Answer[1] = info.PartyB
 		Answer[2] = info.BType
@@ -258,16 +260,25 @@ func SmartSearch(query string) (ans string, pros []Project) {
 		Answer[4] = info.IType
 		Answer[5] = info.CType
 		Answer[6] = info.IType
-		Answer[7] = info.Price
-		return Answer[reply.Res-3], pros
+		return fmt.Sprintf("%s的%s是：", proName, GraphPros[reply.Res-2]), Answer[reply.Res-3], pros
 	} else {
 		graph := GlobalES.GetGraph()
 		if reply.Res == 12 || reply.Res == 13 {
-			PartyA := graph.Enties["甲方"]
-			return PartyA.Relationship[reply.Keyword].Name, pros
+			PartyA := graph.Enties["甲方"].Relationship[reply.Keyword]
+			for name := range PartyA.Relationship {
+				ans += " " + name
+				p := GlobalES.TermQueryByProjectName(name)
+				pros = append(pros, p...)
+			}
+			return fmt.Sprintf("甲方为%s的项目有：", reply.Keyword), ans, pros
 		} else {
-			PartyB := graph.Enties["乙方"]
-			return PartyB.Relationship[reply.Keyword].Name, pros
+			PartyB := graph.Enties["乙方"].Relationship[reply.Keyword]
+			for name := range PartyB.Relationship {
+				ans += " " + name
+				p := GlobalES.TermQueryByProjectName(name)
+				pros = append(pros, p...)
+			}
+			return fmt.Sprintf("乙方为%s的项目有：", reply.Keyword), ans, pros
 		}
 	}
 }

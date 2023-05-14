@@ -386,9 +386,10 @@ func (controller *Controller) SendInfo(c *gin.Context) {
 func (controller *Controller) SmartSearch(c *gin.Context) {
 	s := Model.SearchContent{}
 	c.Bind(&s)
-	ans, pros := Model.SmartSearch(s.Content)
+	p, ans, pros := Model.SmartSearch(s.Content)
 	c.JSON(http.StatusOK, gin.H{
-		"ans":  ans,
-		"pros": pros,
+		"prefix": p,
+		"ans":    ans,
+		"pros":   pros,
 	})
 }

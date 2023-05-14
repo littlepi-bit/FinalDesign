@@ -49,7 +49,7 @@ func InitDatebase() {
 	GlobalConn.DropTable(&SheetFile{})
 
 	GlobalConn.CreateTable(&SheetFile{})
-	GlobalConn.Table("user").CreateTable(&User{})
+	// GlobalConn.Table("user").CreateTable(&User{})
 	GlobalConn.Table("project").CreateTable(&Pro{})
 	GlobalConn.Table("individual").CreateTable(&Ind{})
 	GlobalConn.Table("unit").CreateTable(&Unit{})

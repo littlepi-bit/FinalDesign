@@ -68,9 +68,9 @@ func TestPyRpc() {
 }
 
 func TestSmartSearch() {
-	Model.InitElasticSearch(false)
-	ans, _ := Model.SmartSearch("成都德川友邦印务有限公司新建厂区一期项目的建筑类型是什么")
-	fmt.Println(ans)
+	//Model.InitElasticSearch(false)
+	p, ans, _ := Model.SmartSearch("成都德川友邦印务有限公司新建厂区一期项目的建筑类型是什么")
+	fmt.Println(p, ans)
 }
 
 func TestInfo() {
