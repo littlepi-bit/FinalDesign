@@ -6,7 +6,7 @@ type User struct {
 	UId       int    `gorm:"primary_key;type:bigint;column:uid" json:"userId"`
 	Name      string `gorm:"NOT NULL UNIQUE" json:"userName"`
 	Password  string `gorm:"NOT NULL" json:"password"`
-	UserEmail string `json:"userEmail"`
+	UserEmail string `json:"email"`
 }
 
 func (user *User) CheckUser() bool {
@@ -18,6 +18,21 @@ func (user *User) CheckUser() bool {
 		return false
 	}
 	return true
+}
+
+func (user *User) CheckUserExist() bool {
+	if user.Name == "" {
+		return false
+	}
+	result := GlobalConn.Where(&User{Name: user.Name}).Find(user)
+	if result.Error != nil || result.RowsAffected == 0 {
+		return true
+	}
+	return false
+}
+
+func (user *User) RegisterUser() {
+	GlobalConn.Table("users").Create(user)
 }
 
 func (user *User) ChangePassword(newPassword string) error {

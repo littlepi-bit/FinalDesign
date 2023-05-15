@@ -102,8 +102,8 @@ func main() {
 	// Model.GlobalConn.Table("users").Create(&Model.User{UId: 212414, Name: "sad", Password: "123456"})
 	Model.InitElasticSearch(true)
 	// Model.EmptyDB()
-	//Model.EmptyES()
-	Model.InitGraph()
+	// Model.EmptyES()
+	//Model.InitGraph()
 	Model.InitFolderTree()
 
 	defer Model.CloseDatabase()

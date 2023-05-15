@@ -3,11 +3,13 @@ package Controller
 import (
 	"FinalDesign/Model"
 	"fmt"
+	"hash/crc32"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -340,6 +342,72 @@ func (controller *Controller) LoginCheck(c *gin.Context) {
 		})
 		return
 	} else {
+		token := Model.GenerateToken(&Model.JWTClaims{
+			UserID:   user.UId,
+			Username: user.Name,
+			Password: user.Password,
+		})
+		// Model.SetHash(
+		// 	token,
+		// 	Model.JsontoString(gin.H{
+		// 		"userId":   user.UId,
+		// 		"userName": user.Name,
+		// 		"password": user.Password,
+		// 	}),
+		// 	time.Minute*5)
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:     "token", //你的cookie的名字
+			Value:    token,   //cookie值
+			Path:     "/",
+			Domain:   "",
+			MaxAge:   604800,
+			Secure:   false,
+			HttpOnly: false,
+			// SameSite: 4, //下面是详细解释
+		})
+		controller.UserId = user.UId
+		c.JSON(http.StatusOK, gin.H{
+			"token":    token,
+			"msg":      "ok",
+			"userName": user.Name,
+		})
+	}
+}
+
+//用户注册
+func (controller *Controller) Register(c *gin.Context) {
+	user := &Model.User{}
+	c.Bind(&user)
+	if user.Name == "" {
+		log.Println("用户名不能为空")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "用户名不能为空",
+		})
+		return
+	} else if user.UserEmail == "" {
+		log.Println("邮箱不能为空")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "邮箱不能为空",
+		})
+		return
+	} else if user.Password == "" {
+		log.Println("密码不能为空")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "密码不能为空",
+		})
+		return
+	}
+	result := user.CheckUserExist()
+	fmt.Println(user)
+	if !result {
+		log.Println("用户已存在")
+		c.JSON(http.StatusOK, gin.H{
+			"msg": "用户已存在",
+		})
+		return
+	} else {
+		user.UId = int(crc32.ChecksumIEEE([]byte(user.Name + time.Now().String())))
+		user.RegisterUser()
 		token := Model.GenerateToken(&Model.JWTClaims{
 			UserID:   user.UId,
 			Username: user.Name,

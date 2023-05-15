@@ -53,9 +53,6 @@ func RouterInit() *gin.Engine {
 	r.GET("/getInfo", controller.GetInfo)
 	r.GET("/getGraph", controller.GetGraph)
 	r.GET("/getFolder/:folderId", controller.GetFolder)
-	r.POST("/chunkUpload", controller.ChunkUpload)
-	r.POST("/UploadFolder", controller.UploadFolder)
-	r.POST("/deleteFiles", controller.DeleteFile)
 	r.GET("/UploadFolder", controller.GetFolderInfo)
 	r.GET("/searchProject", controller.SearchProject)
 	r.POST("/smartSearch", controller.SmartSearch)
@@ -65,6 +62,10 @@ func RouterInit() *gin.Engine {
 	r.GET("/searchMeasure", controller.SearchMeasure)
 	r.GET("/getReleventDoc", controller.GetRelevantDoc)
 	r.POST("/loginCheck", controller.LoginCheck)
+	r.POST("/register", controller.Register)
 	r.POST("/SendInfo", controller.SendInfo)
+	r.POST("/chunkUpload", controller.ChunkUpload)
+	r.POST("/UploadFolder", controller.UploadFolder)
+	r.POST("/deleteFiles", controller.DeleteFile)
 	return r
 }
